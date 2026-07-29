@@ -114,8 +114,11 @@
     enable = true;
     # Port Tailscale WireGuard
     allowedUDPPorts = [ 41641 ];
-    # SSH uniquement sur l'interface Tailscale — jamais exposé sur Internet
+    # SSH sur Tailscale (accès principal)
     interfaces.tailscale0.allowedTCPPorts = [ 22 ];
+    # SSH sur le réseau local en fallback si Tailscale est down
+    # Toujours protégé par clé SSH uniquement (pas de mot de passe possible)
+    interfaces.ens18.allowedTCPPorts = [ 22 ];
     checkReversePath = "loose";
   };
 
