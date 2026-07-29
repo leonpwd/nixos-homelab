@@ -12,7 +12,7 @@
       nixosConfigurations.server = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
-          ./hosts/server/configuration.nix
+          ./configuration/configuration.nix
         ];
       };
     };
