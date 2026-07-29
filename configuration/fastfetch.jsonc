@@ -1,0 +1,139 @@
+// Custom fastfetch preset — nginx server
+// Modules : os/kernel/uptime | host/cpu/gpu | ram/disk | lan/tailscale/containers
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+
+    "logo": {
+        "padding": {
+            "top": 1,
+            "right": 2
+        }
+    },
+
+    "display": {
+        "separator": "  ",
+        "color": {
+            "separator": "cyan"
+        },
+        "constants": [
+            "────────────────────────────────────────────────────────────────────────────────────────────",
+            "│\u001b[92C│\u001b[92D"
+        ],
+        "bar": {
+            "border": {
+                "left":         "\uee00",
+                "leftElapsed":  "\uee03",
+                "right":        "\uee02",
+                "rightElapsed": "\uee05"
+            },
+            "char": {
+                "total":   "\uee01",
+                "elapsed": "\uee04"
+            },
+            "width": 18,
+            "color": {
+                "total": null
+            }
+        },
+        "percent": {
+            "type": 3
+        },
+        "key": {
+            "width": 14
+        }
+    },
+
+    "modules": [
+
+        // ╭─── Titre ───────────────────────────────────────────────────────────╮
+        {
+            "format": "{#1}{#keys}╭{$1}╮\u001b[93D  {user-name-colored}{at-symbol-colored}{host-name-colored}",
+            "type": "title"
+        },
+
+        // ── SYSTÈME
+        {
+            "key":  "{$2}{#33}{icon} os      ",
+            "type": "os"
+        },
+        {
+            "key":  "{$2}{#33}󰒔 kernel  ",
+            "type": "kernel"
+        },
+        {
+            "key":  "{$2}{#33}󰅐 uptime  ",
+            "type": "uptime"
+        },
+
+        // ├─── Séparateur ──────────────────────────────────────────────────────┤
+        {
+            "format": "{#1}{#keys}├{$1}┤",
+            "type": "custom"
+        },
+
+        // ── HARDWARE
+        {
+            "key":  "{$2}{#32}󰌢 host    ",
+            "type": "host"
+        },
+        {
+            "key":             "{$2}{#32}󰻠 cpu     ",
+            "type":            "cpu",
+            "temp":            true,
+            "showPeCoreCount": true
+        },
+        {
+            "key":  "{$2}{#32}󰍛 gpu     ",
+            "type": "gpu"
+        },
+
+        // ├─── Séparateur ──────────────────────────────────────────────────────┤
+        {
+            "format": "{#1}{#keys}├{$1}┤",
+            "type": "custom"
+        },
+
+        // ── RESSOURCES
+        {
+            "type": "memory",
+            "key":  "{$2}{#35}󰑭 ram     "
+        },
+        {
+            "type":    "disk",
+            "folders": "/",
+            "key":     "{$2}{#35}󰋊 disk    "
+        },
+
+        // ├─── Séparateur ──────────────────────────────────────────────────────┤
+        {
+            "format": "{#1}{#keys}├{$1}┤",
+            "type": "custom"
+        },
+
+        // ── RÉSEAU
+        {
+            "type":   "command",
+            "key":    "{$2}{#34}󰈀 lan     ",
+            "text":   "ip -4 addr show ens18 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 || echo 'down'"
+        },
+        {
+            "type":   "command",
+            "key":    "{$2}{#34}󰕥 ts      ",
+            "text":   "ip -4 addr show tailscale0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 || echo 'down'"
+        },
+
+        // ── CONTAINERS
+        {
+            "type": "command",
+            "key":  "{$2}{#36}󰡨 pods    ",
+            "text": "names=$(podman ps --format '{{.Names}}' 2>/dev/null | paste -sd ', ' -); [ -n \"$names\" ] && echo \"$names\" || echo 'aucun'"
+        },
+
+        // ╰─── Fermeture ───────────────────────────────────────────────────────╯
+        {
+            "format": "{#1}{#keys}╰{$1}╯",
+            "type": "custom"
+        }
+
+    ]
+}

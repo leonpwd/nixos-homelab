@@ -9,7 +9,7 @@
     let
       system = "x86_64-linux";
     in {
-      nixosConfigurations.server = nixpkgs.lib.nixosSystem {
+      nixosConfigurations.nginx = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
           ./configuration/configuration.nix
