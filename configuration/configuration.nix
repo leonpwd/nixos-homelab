@@ -32,9 +32,6 @@
     openFirewall = false;
   };
 
-  security.pam.services.sshd.allowNullPassword = true;
-  users.users.root.initialHashedPassword = "";
-
   services.tailscale.enable = true;
 
   virtualisation.podman = {
