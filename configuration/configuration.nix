@@ -124,7 +124,18 @@
   };
 
   # ── Réseau & firewall ──────────────────────────────────────────────────────────
-
+  
+  networking.nameservers = [
+    "1.1.1.1"             # Cloudflare Primary
+    "1.0.0.1"             # Cloudflare Backup
+    "1.1.1.2"             # Cloudflare Security (Anti-malware)
+    "8.8.8.8"             # Google Primary
+    "2606:4700:4700::1111" # Cloudflare IPv6 Primary
+    "2606:4700:4700::1001" # Cloudflare IPv6 Backup
+    "2606:4700:4700::1112" # Cloudflare IPv6 Security
+    "2001:4860:4860::8888" # Google IPv6 Primary
+  ];   
+  
   networking.firewall = {
   enable = true;
   

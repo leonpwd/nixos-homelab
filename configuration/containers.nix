@@ -36,6 +36,7 @@
   ];
   
   # Service d'enregistrement automatique dans le conteneur Crowdsec au boot
+  # Service d'enregistrement automatique dans le conteneur Crowdsec au boot
   systemd.services."register-crowdsec-bouncer" = {
     description = "Enregistre la clé API bouncer dans Crowdsec";
     after = [ "podman-crowdsec.service" "sops-nix.service" ];
@@ -43,15 +44,20 @@
     wantedBy = [ "podman-compose-nginx-root.target" ];
     path = [ pkgs.podman pkgs.gnugrep ];
     script = ''
-      API_KEY="${config.sops.placeholder."crowdsec/bouncer_api_key"}"
+      API_KEY="$(cat ${config.sops.secrets."crowdsec/bouncer_api_key".path})"
 
+      # Attente que la LAPI Crowdsec soit prête
       until podman exec crowdsec cscli bouncers list >/dev/null 2>&1; do
         sleep 2
       done
 
-      if ! podman exec crowdsec cscli bouncers list -o json | grep -q '"name":"npmplus"'; then
-        podman exec crowdsec cscli bouncers add npmplus --key "$API_KEY"
+      # Si le bouncer existe déjà, on le supprime pour s'assurer que la clé SOPS actuelle est bien enregistrée
+      if podman exec crowdsec cscli bouncers list -o json | grep -q 'npmplus'; then
+        podman exec crowdsec cscli bouncers delete npmplus || true
       fi
+
+      # Ajout du bouncer avec la clé
+      podman exec crowdsec cscli bouncers add npmplus --key "$API_KEY"
     '';
     serviceConfig = {
       Type = "oneshot";
@@ -231,6 +237,11 @@
     ];
   };
   systemd.services."podman-npmplus" = {
+    preStart = ''
+      mkdir -p /config/npmplus/crowdsec
+      cp -f ${config.sops.templates."npmplus-crowdsec.conf".path} /config/npmplus/crowdsec/crowdsec.conf
+      chmod 644 /config/npmplus/crowdsec/crowdsec.conf
+    '';
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };
