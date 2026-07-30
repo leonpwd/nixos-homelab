@@ -8,15 +8,56 @@
     "${matchAll}".allowedUDPPorts = [ 53 ];
   };
 
-  # Dossiers de volumes — créés avant le démarrage des containers
+  # Dossiers de volumes
   systemd.tmpfiles.rules = [
     "d /config/npmplus                   0750 root root -"
     "d /config/npmplus/nginx             0750 root root -"
     "d /config/npmplus/goaccess/geoip   0750 root root -"
-    "d /config/arcane-data               0750 root root -"
+    "d /config/npmplus/crowdsec          0750 root root -"
+    "d /config/arcane-data               0750 1000 1000 -"
     "d /config/crowdsec/conf             0750 root root -"
+    "d /config/crowdsec/conf/acquis.d    0750 root root -"
     "d /config/crowdsec/data             0750 root root -"
+
+    # Génération propre du fichier acquis.d/npmplus.yaml
+    "C+ /config/crowdsec/conf/acquis.d/npmplus.yaml 0644 root root - ${pkgs.writeText "npmplus.yaml" ''
+      filenames:
+        - /config/npmplus/nginx/*.log
+      labels:
+        type: npmplus
+      ---
+      listen_addr: 0.0.0.0:7422
+      appsec_config: crowdsecurity/appsec-default
+      name: appsec
+      source: appsec
+      labels:
+        type: appsec
+    ''}"
   ];
+  
+  # Service d'enregistrement automatique dans le conteneur Crowdsec au boot
+  systemd.services."register-crowdsec-bouncer" = {
+    description = "Enregistre la clé API bouncer dans Crowdsec";
+    after = [ "podman-crowdsec.service" "sops-nix.service" ];
+    requires = [ "podman-crowdsec.service" ];
+    wantedBy = [ "podman-compose-nginx-root.target" ];
+    path = [ pkgs.podman pkgs.gnugrep ];
+    script = ''
+      API_KEY="${config.sops.placeholder."crowdsec/bouncer_api_key"}"
+
+      until podman exec crowdsec cscli bouncers list >/dev/null 2>&1; do
+        sleep 2
+      done
+
+      if ! podman exec crowdsec cscli bouncers list -o json | grep -q '"name":"npmplus"'; then
+        podman exec crowdsec cscli bouncers add npmplus --key "$API_KEY"
+      fi
+    '';
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+  };
 
   virtualisation.oci-containers.backend = "podman";
 

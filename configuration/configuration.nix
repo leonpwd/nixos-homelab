@@ -126,12 +126,30 @@
   # ── Réseau & firewall ──────────────────────────────────────────────────────────
 
   networking.firewall = {
-    enable           = true;
-    allowedUDPPorts  = [ 41641 ];
-    interfaces.tailscale0.allowedTCPPorts = [ 22 ];
-    interfaces.ens18.allowedTCPPorts      = [ 22 ];
-    checkReversePath = "loose";
+  enable = true;
+  
+  # Ports globaux
+  allowedUDPPorts = [ 
+    41641 # Tailscale
+  ];
+
+  # Règles spécifiques par interface réseau
+  interfaces = {
+    # Interface publique (Internet / LAN)
+    ens18 = {
+      allowedTCPPorts = [ 22 80 443 81 ];
+      allowedUDPPorts = [ 80 443 ];
+    };
+
+    # Interface Tailscale (Réseau privé sécurisé)
+    tailscale0 = {
+      allowedTCPPorts = [ 22 ];
+    };
   };
+
+  checkReversePath = "loose";
+};
+
 
   # ── Services ───────────────────────────────────────────────────────────────────
 
@@ -148,7 +166,7 @@
 
   # ── Paquets & scripts ──────────────────────────────────────────────────────────
 
-  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just ];
+  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just tree];
 
   system.activationScripts.serverJustfile = lib.stringAfter [ "users" ] ''
     install -m 644 ${./etc/server.just} /Justfile

@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Lit le .env local et produit secrets/containers.yaml chiffré (commitable).
-# Usage : ./encrypt-secrets.sh  ou  just encrypt
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,6 +21,10 @@ npmplus:
 geoip:
     account_id: "${GEOIPUPDATE_ACCOUNT_ID}"
     license_key: "${GEOIPUPDATE_LICENSE_KEY}"
+crowdsec:
+    bouncer_api_key: "${CROWDSEC_BOUNCER_API_KEY}"
+    turnstile_secret_key: "${TURNSTILE_SECRET_KEY}"
+    turnstile_site_key: "${TURNSTILE_SITE_KEY}"
 EOF
 
 sops --encrypt --in-place "$OUT_FILE"
