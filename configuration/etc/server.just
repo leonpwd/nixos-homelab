@@ -31,7 +31,7 @@ timers:
 
 # Statut de tous les containers
 ps:
-    podman ps -a --format "table \{{.Names}}\t\{{.Status}}\t\{{.Image}}"
+    podman ps -a --format "table {{{{.Names}}}}\t{{{{.Status}}}}\t{{{{.Image}}}}"
 
 # Logs d'un container (usage : just logs arcane)
 logs container:

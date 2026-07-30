@@ -4,6 +4,7 @@
     ./hardware-configuration.nix
     ./services.nix
     ./secrets.nix
+    ./containers.nix
   ];
 
   # ── Système de base ────────────────────────────────────────────────────────────
@@ -76,12 +77,13 @@
       alias ls='ls --color=auto'
       alias ll='ls -alF --color=auto'
       alias la='ls -A --color=auto'
+      alias docker='podman'
       fastfetch --config /etc/fastfetch/config.jsonc
     '';
   };
 
-  environment.etc."p10k.zsh".source          = ./p10k.zsh;
-  environment.etc."fastfetch/config.jsonc".source = ./fastfetch.jsonc;
+  environment.etc."p10k.zsh".source               = ./etc/p10k;
+  environment.etc."fastfetch/config.jsonc".source  = ./etc/fastfetch.jsonc;
 
   # ── Sudo ───────────────────────────────────────────────────────────────────────
 
@@ -138,6 +140,7 @@
   virtualisation.podman = {
     enable       = true;
     dockerCompat = true;
+    dockerSocket.enable = true;
     defaultNetwork.settings.dns_enabled = true;
   };
 
@@ -148,7 +151,7 @@
   environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just ];
 
   system.activationScripts.serverJustfile = lib.stringAfter [ "users" ] ''
-    install -o lego -g users -m 644 ${./server.just} /home/lego/Justfile
+    install -m 644 ${./etc/server.just} /Justfile
   '';
 
   system.stateVersion = "26.05";
