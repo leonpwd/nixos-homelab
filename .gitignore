@@ -1,2 +1,3 @@
 docker-compose nginx.yml
 .env
+flake.lock

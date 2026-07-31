@@ -5,6 +5,7 @@
   system.autoUpgrade = {
     enable             = true;
     flake              = "path:/etc/nixos#nginx";
+    flags              = [ "--update-input" "nixpkgs" ];
     dates              = "Mon 04:00";
     randomizedDelaySec = "30min";
     persistent         = true;
