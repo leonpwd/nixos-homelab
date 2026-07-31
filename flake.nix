@@ -2,7 +2,7 @@
   description = "Base NixOS server with Tailscale and Podman";
 
   inputs = {
-    nixpkgs.url  = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url  = "github:NixOS/nixpkgs/nixos-26.05";
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
