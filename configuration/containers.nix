@@ -18,6 +18,7 @@
     "d /config/crowdsec/conf             0750 root root -"
     "d /config/crowdsec/conf/acquis.d    0750 root root -"
     "d /config/crowdsec/data             0750 root root -"
+    "d /config/npmplus/custom_nginx      0750 root root -"
 
     # Copie du fichier npmplus.yaml depuis le dossier ./crowdsec du dépôt vers acquis.d sur l'hôte
     "C+ /config/crowdsec/conf/acquis.d/npmplus.yaml 0644 root root - ${../crowdsec/npmplus.yaml}"
@@ -224,6 +225,7 @@
   virtualisation.oci-containers.containers."npmplus" = {
     image = "docker.io/zoeyvid/npmplus:latest";
     environment = {
+      "CLOUDFLARE_REAL_IP" = "true";
       "IPV4_DNS" = "1.1.1.1 8.8.8.8";
       "IPV6_DNS" = "2606:4700:4700::1111 2606:4700:4700::1001";
       "LOGROTATE" = "true";
@@ -246,6 +248,12 @@
       mkdir -p /config/npmplus/crowdsec
       cp -f ${config.sops.templates."npmplus-crowdsec.conf".path} /config/npmplus/crowdsec/crowdsec.conf
       chmod 644 /config/npmplus/crowdsec/crowdsec.conf
+
+      mkdir -p /config/npmplus/custom_nginx
+      cp -f ${../crowdsec/geoip_map.conf} /config/npmplus/custom_nginx/http.conf
+      cp -f ${../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/server_proxy.conf
+      cp -f ${../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/location_proxy.conf
+      chmod 644 /config/npmplus/custom_nginx/http.conf /config/npmplus/custom_nginx/server_proxy.conf /config/npmplus/custom_nginx/location_proxy.conf
     '';
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";

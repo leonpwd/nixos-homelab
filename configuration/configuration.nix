@@ -5,6 +5,7 @@
     ./services.nix
     ./secrets.nix
     ./containers.nix
+    ./console.nix
   ];
 
   # ── Système de base ────────────────────────────────────────────────────────────
