@@ -124,9 +124,9 @@
 
         // ── CONTAINERS
         {
-            "type": "command",
-            "key":  "{$2}{#36}󰡨 pods    ",
-            "text": "names=$(podman ps --format '{{.Names}}' 2>/dev/null | paste -sd ', ' -); [ -n \"$names\" ] && echo \"$names\" || echo 'aucun'"
+            "type":   "command",
+            "key":    "{$2}{#36}󰡨 pods    ",
+            "text":   "sudo podman ps --format '{{.Names}}' 2>/dev/null | awk 'BEGIN{ split(\"36 32 33 34 35 31\", fg, \" \"); split(\"46 42 43 44 45 41\", bg, \" \") } NF { i=(NR-1)%6+1; printf \"\\033[0;%sm\\ue0b6\\033[30;%sm %s \\033[0;%sm\\ue0b4\\033[0m \", fg[i], bg[i], $0, fg[i] } END { if (NR==0) print \"aucun\" }'"
         },
 
         // ╰─── Fermeture ───────────────────────────────────────────────────────╯

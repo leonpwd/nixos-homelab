@@ -173,6 +173,15 @@
     defaultNetwork.settings.dns_enabled = true;
   };
 
+  systemd.sockets.podman = {
+    wantedBy = [ "sockets.target" "multi-user.target" ];
+    unitConfig.StartLimitIntervalSec = 0;
+  };
+
+  systemd.services.podman = {
+    wantedBy = [ "multi-user.target" ];
+  };
+
   virtualisation.containers.enable = true;
 
   # ── Paquets & scripts ──────────────────────────────────────────────────────────

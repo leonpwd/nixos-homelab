@@ -37,4 +37,31 @@
       RandomizedDelaySec = "15min";
     };
   };
+
+  # ── Auto-update des conteneurs Podman — tous les jours à 4h00 ─────────────────
+  # Met à jour les conteneurs ayant l'étiquette io.containers.autoupdate=registry et dangles images.
+
+  systemd.services.podman-auto-update = {
+    description = "Auto-update des conteneurs Podman et nettoyage des images";
+    after       = [ "network-online.target" ];
+    wants       = [ "network-online.target" ];
+    path        = [ pkgs.podman ];
+    serviceConfig = {
+      Type = "oneshot";
+      User = "root";
+    };
+    script = ''
+      podman auto-update
+      podman image prune -f
+    '';
+  };
+
+  systemd.timers.podman-auto-update = {
+    wantedBy    = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar         = "*-*-* 04:00:00";
+      Persistent         = true;
+      RandomizedDelaySec = "10min";
+    };
+  };
 }

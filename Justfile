@@ -23,7 +23,7 @@ sync host:
 
 # Sync + nixos-rebuild switch
 deploy host: (sync host)
-    ssh {{ USER }}@{{ host }} "sudo nixos-rebuild switch --flake path:/etc/nixos#nginx"
+    ssh {{ USER }}@{{ host }} "sudo systemctl stop nixos-rebuild-switch-to-configuration.service 2>/dev/null || true; sudo systemctl daemon-reload; sudo nixos-rebuild switch --flake path:/etc/nixos#nginx"
 
 # Sync + nixos-rebuild test (applique sans rendre permanent)
 test host: (sync host)

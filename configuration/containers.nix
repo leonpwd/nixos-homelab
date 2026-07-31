@@ -19,20 +19,8 @@
     "d /config/crowdsec/conf/acquis.d    0750 root root -"
     "d /config/crowdsec/data             0750 root root -"
 
-    # Génération propre du fichier acquis.d/npmplus.yaml
-    "C+ /config/crowdsec/conf/acquis.d/npmplus.yaml 0644 root root - ${pkgs.writeText "npmplus.yaml" ''
-      filenames:
-        - /config/npmplus/nginx/*.log
-      labels:
-        type: npmplus
-      ---
-      listen_addr: 0.0.0.0:7422
-      appsec_config: crowdsecurity/appsec-default
-      name: appsec
-      source: appsec
-      labels:
-        type: appsec
-    ''}"
+    # Copie du fichier npmplus.yaml depuis le dossier ./crowdsec du dépôt vers acquis.d sur l'hôte
+    "C+ /config/crowdsec/conf/acquis.d/npmplus.yaml 0644 root root - ${../crowdsec/npmplus.yaml}"
   ];
   
   # Service d'enregistrement automatique dans le conteneur Crowdsec au boot
@@ -89,6 +77,7 @@
     ];
     log-driver = "journald";
     extraOptions = [
+      "--label=io.containers.autoupdate=registry"
       "--network-alias=arcane"
       "--network=netPROXY"
     ];
@@ -135,6 +124,7 @@
     ];
     log-driver = "journald";
     extraOptions = [
+      "--label=io.containers.autoupdate=registry"
       "--network-alias=crowdsec"
       "--network=netPROXY"
     ];
@@ -161,7 +151,7 @@
     ];
   };
   virtualisation.oci-containers.containers."docker-proxy" = {
-    image = "tecnativa/docker-socket-proxy:latest";
+    image = "docker.io/tecnativa/docker-socket-proxy:latest";
     environment = {
       "AUTH" = "0";
       "BUILD" = "0";
@@ -188,24 +178,38 @@
       "VOLUMES" = "1";
     };
     volumes = [
-      "/var/run/docker.sock:/var/run/docker.sock:ro"
+      "/run/podman/podman.sock:/var/run/docker.sock:ro"
     ];
     log-driver = "journald";
     extraOptions = [
+      "--label=io.containers.autoupdate=registry"
       "--network-alias=docker-proxy"
       "--network=netPROXY"
       "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-docker-proxy" = {
+    unitConfig = {
+      StartLimitIntervalSec = 0;
+    };
+    preStart = ''
+      if [ -d /run/podman/podman.sock ]; then
+        rm -rf /run/podman/podman.sock
+      fi
+      if [ -d /var/run/docker.sock ]; then
+        rm -rf /var/run/docker.sock
+      fi
+    '';
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };
     after = [
       "podman-network-netPROXY.service"
+      "podman.service"
     ];
     requires = [
       "podman-network-netPROXY.service"
+      "podman.service"
     ];
     partOf = [
       "podman-compose-nginx-root.target"
@@ -233,6 +237,7 @@
     ];
     log-driver = "journald";
     extraOptions = [
+      "--label=io.containers.autoupdate=registry"
       "--network=host"
     ];
   };
@@ -266,6 +271,7 @@
     ];
     log-driver = "journald";
     extraOptions = [
+      "--label=io.containers.autoupdate=registry"
       "--network-alias=geoipupdate"
       "--network=netPROXY"
     ];
