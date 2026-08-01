@@ -1,11 +1,11 @@
 { config, ... }:
 {
   sops = {
-    defaultSopsFile   = ../secrets/containers.yaml;
+    defaultSopsFile   = ../../secrets/nginx.yaml;
     defaultSopsFormat = "yaml";
     age.sshKeyPaths   = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
-    # ── Secrets ────────────────────────────────────────────────────────────────
+    # ── Secrets Declarations (Nginx Proxy Host) ───────────────────────────────
 
     secrets."arcane/encryption_key" = {};
     secrets."arcane/jwt_secret"     = {};
@@ -13,12 +13,12 @@
     secrets."geoip/account_id"      = {};
     secrets."geoip/license_key"     = {};
 
-    # ── Secrets Crowdsec / Turnstile ──────────────────────────────────────────
+    # ── CrowdSec / Turnstile Secrets ──────────────────────────────────────────
     secrets."crowdsec/bouncer_api_key" = {};
     secrets."crowdsec/turnstile_secret_key" = {};
     secrets."crowdsec/turnstile_site_key" = {};
 
-    # ── Templates .env injectés dans les containers ────────────────────────────
+    # ── Container .env Templates ───────────────────────────────────────────────
 
     templates."arcane.env".content = ''
       ENCRYPTION_KEY=${config.sops.placeholder."arcane/encryption_key"}
@@ -34,7 +34,7 @@
       GEOIPUPDATE_LICENSE_KEY=${config.sops.placeholder."geoip/license_key"}
     '';
 
-    # Template pour crowdsec.conf (charge crowdsec/npmplus-crowdsec.conf du dépôt et injecte les secrets SOPS)
+    # Dynamic template for Nginx CrowdSec bouncer configuration
     templates."npmplus-crowdsec.conf" = {
       content = builtins.replaceStrings
         [ "_BOUNCER_API_KEY_" "_TURNSTILE_SECRET_KEY_" "_TURNSTILE_SITE_KEY_" ]
@@ -43,7 +43,7 @@
           config.sops.placeholder."crowdsec/turnstile_secret_key"
           config.sops.placeholder."crowdsec/turnstile_site_key"
         ]
-        (builtins.readFile ../crowdsec/npmplus-crowdsec.conf);
+        (builtins.readFile ../../crowdsec/npmplus-crowdsec.conf);
       owner = "root";
       group = "root";
       mode  = "0644";

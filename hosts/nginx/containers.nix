@@ -1,14 +1,14 @@
 { pkgs, lib, config, ... }:
 
 {
-  # DNS pour la résolution des noms de containers entre eux
+  # DNS for container-to-container name resolution
   networking.firewall.interfaces = let
     matchAll = if !config.networking.nftables.enable then "podman+" else "podman*";
   in {
     "${matchAll}".allowedUDPPorts = [ 53 ];
   };
 
-  # Dossiers de volumes
+  # Volume directories creation
   systemd.tmpfiles.rules = [
     "d /config/npmplus                   0750 root root -"
     "d /config/npmplus/nginx             0750 root root -"
@@ -20,14 +20,13 @@
     "d /config/crowdsec/data             0750 root root -"
     "d /config/npmplus/custom_nginx      0750 root root -"
 
-    # Copie du fichier npmplus.yaml depuis le dossier ./crowdsec du dépôt vers acquis.d sur l'hôte
-    "C+ /config/crowdsec/conf/acquis.d/npmplus.yaml 0644 root root - ${../crowdsec/npmplus.yaml}"
+    # Copy npmplus.yaml from root crowdsec folder to acquis.d
+    "C+ /config/crowdsec/conf/acquis.d/npmplus.yaml 0644 root root - ${../../crowdsec/npmplus.yaml}"
   ];
   
-  # Service d'enregistrement automatique dans le conteneur Crowdsec au boot
-  # Service d'enregistrement automatique dans le conteneur Crowdsec au boot
+  # Auto-registration service for CrowdSec bouncer
   systemd.services."register-crowdsec-bouncer" = {
-    description = "Enregistre la clé API bouncer dans Crowdsec";
+    description = "Register bouncer API key in CrowdSec";
     after = [ "podman-crowdsec.service" "sops-nix.service" ];
     requires = [ "podman-crowdsec.service" ];
     wantedBy = [ "podman-compose-nginx-root.target" ];
@@ -35,17 +34,14 @@
     script = ''
       API_KEY="$(cat ${config.sops.secrets."crowdsec/bouncer_api_key".path})"
 
-      # Attente que la LAPI Crowdsec soit prête
       until podman exec crowdsec cscli bouncers list >/dev/null 2>&1; do
         sleep 2
       done
 
-      # Si le bouncer existe déjà, on le supprime pour s'assurer que la clé SOPS actuelle est bien enregistrée
       if podman exec crowdsec cscli bouncers list -o json | grep -q 'npmplus'; then
         podman exec crowdsec cscli bouncers delete npmplus || true
       fi
 
-      # Ajout du bouncer avec la clé
       podman exec crowdsec cscli bouncers add npmplus --key "$API_KEY"
     '';
     serviceConfig = {
@@ -56,7 +52,8 @@
 
   virtualisation.oci-containers.backend = "podman";
 
-  # Containers
+  # ── Containers ─────────────────────────────────────────────────────────────
+
   virtualisation.oci-containers.containers."arcane" = {
     image = "ghcr.io/getarcaneapp/arcane:latest";
     environment = {
@@ -64,7 +61,6 @@
       "PGID" = "1000";
       "PUID" = "1000";
       "TZ"   = "Europe/Paris";
-      # ENCRYPTION_KEY et JWT_SECRET → injectés via sops template
     };
     environmentFiles = [ config.sops.templates."arcane.env".path ];
     volumes = [
@@ -104,6 +100,7 @@
       "podman-compose-nginx-root.target"
     ];
   };
+
   virtualisation.oci-containers.containers."crowdsec" = {
     image = "docker.io/crowdsecurity/crowdsec:latest";
     environment = {
@@ -151,6 +148,7 @@
       "podman-compose-nginx-root.target"
     ];
   };
+
   virtualisation.oci-containers.containers."docker-proxy" = {
     image = "docker.io/tecnativa/docker-socket-proxy:latest";
     environment = {
@@ -222,6 +220,7 @@
       "podman-compose-nginx-root.target"
     ];
   };
+
   virtualisation.oci-containers.containers."npmplus" = {
     image = "docker.io/zoeyvid/npmplus:latest";
     environment = {
@@ -231,7 +230,6 @@
       "LOGROTATE" = "true";
       "NGINX_LOAD_GEOIP2_MODULE" = "true";
       "TZ"       = "Europe/Paris";
-      # ACME_EMAIL → injectée via sops template
     };
     environmentFiles = [ config.sops.templates."npmplus.env".path ];
     volumes = [
@@ -250,9 +248,9 @@
       chmod 644 /config/npmplus/crowdsec/crowdsec.conf
 
       mkdir -p /config/npmplus/custom_nginx
-      cp -f ${../crowdsec/geoip_map.conf} /config/npmplus/custom_nginx/http.conf
-      cp -f ${../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/server_proxy.conf
-      cp -f ${../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/location_proxy.conf
+      cp -f ${../../crowdsec/geoip_map.conf} /config/npmplus/custom_nginx/http.conf
+      cp -f ${../../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/server_proxy.conf
+      cp -f ${../../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/location_proxy.conf
       chmod 644 /config/npmplus/custom_nginx/http.conf /config/npmplus/custom_nginx/server_proxy.conf /config/npmplus/custom_nginx/location_proxy.conf
     '';
     serviceConfig = {
@@ -265,13 +263,13 @@
       "podman-compose-nginx-root.target"
     ];
   };
+
   virtualisation.oci-containers.containers."npmplus-geoipupdate" = {
     image = "ghcr.io/maxmind/geoipupdate:latest";
     environment = {
       "GEOIPUPDATE_EDITION_IDS" = "GeoLite2-Country GeoLite2-City GeoLite2-ASN";
       "GEOIPUPDATE_FREQUENCY"   = "24";
       "TZ"                      = "Europe/Paris";
-      # GEOIPUPDATE_ACCOUNT_ID et GEOIPUPDATE_LICENSE_KEY → injectés via sops template
     };
     environmentFiles = [ config.sops.templates."geoip.env".path ];
     volumes = [
@@ -320,12 +318,10 @@
     wantedBy = [ "podman-compose-nginx-root.target" ];
   };
 
-  # Root service
-  # When started, this will automatically create all resources and start
-  # the containers. When stopped, this will teardown all resources.
+  # Root service target
   systemd.targets."podman-compose-nginx-root" = {
     unitConfig = {
-      Description = "Root target generated by compose2nix.";
+      Description = "Root target for Proxy containers.";
     };
     wantedBy = [ "multi-user.target" ];
   };

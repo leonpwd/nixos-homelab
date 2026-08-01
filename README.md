@@ -1,142 +1,121 @@
-# NixOS Server — NPMPlus & CrowdSec (AppSec WAF)
+# Multi-Host NixOS Infrastructure
 
-Modular, declarative, and highly secure NixOS configuration powered by **Nix Flakes**, **Podman (`oci-containers`)**, **SOPS-nix**, **NPMPlus** (Nginx Proxy Manager Extended), **CrowdSec** (LAPI + WAF AppSec), and **Tailscale**.
-
----
-
-### Architecture & Overview
-
-```
-                  ┌────────────────────────────────────────────────────────┐
-                  │              NixOS Host (Network: host)                │
-                  │                                                        │
-                  │   ┌────────────────────────────────────────────────┐   │
-                  │   │                    NPMPlus                     │   │
-                  │   │         (Nginx Proxy Manager Extended)         │   │
-                  │   └──────┬──────────────────┬──────────────────────┘   │
-                  │          │ (Nginx logs)     │ (LAPI :8080 / WAF :7422) │
-                  └──────────┼──────────────────┼──────────────────────────┘
-                             │                  │
-                ┌────────────┴──────────────────▼──────────────────────────┐
-                │             Bridge Container (`netPROXY`)               │
-                │                                                          │
-                │   ┌──────────────────┐        ┌──────────────────────┐   │
-                │   │     CrowdSec     │        │  docker-socket-proxy │   │
-                │   │ (LAPI + AppSec)  │        │   (Secured socket)   │   │
-                │   └──────────────────┘        ───────────┬───────────┘   │
-                │                                          │               │
-                │                               ┌──────────▼───────────┐   │
-                │                               │        Arcane        │   │
-                │                               │  (Docker UI Admin)   │   │
-                │                               └──────────────────────┘   │
-                └──────────────────────────────────────────────────────────┘
-```
-
-#### Key Architecture Points:
-* **NPMPlus in `--network=host`**: Preserves real client WAN IP addresses without NAT masking, allowing CrowdSec to issue accurate bans.
-* **CrowdSec AppSec WAF (Port 7422)**: Active application-layer defense against SQL injection, XSS, automated bots, and direct HTTP attacks.
-* **Automated Bouncer Registration**: A Systemd service (`register-crowdsec-bouncer`) automatically registers the SOPS API key with CrowdSec on boot.
-* **Secret Management with SOPS-nix**: No sensitive API keys or credentials stored unencrypted in Git or the Nix Store.
-* **Daily Auto-Updates at 04:00 AM**: Systemd timer updates container images tagged `io.containers.autoupdate=registry` and prunes dangling images.
+Declarative, multi-host NixOS infrastructure featuring an edge Reverse Proxy & WAF node (`nginx`) and a dedicated Media & Automation stack (`media`), managed seamlessly via Nix Flakes, Podman, Tailscale, and SOPS-nix.
 
 ---
 
-### Repository Structure
+## 🏗️ System Architecture
 
+```text
+                               ┌───────────────────────────┐
+                               │ Self Hosted Media Stack   │
+                               └─────────────┬─────────────┘
+                                             │
+                       ┌─────────────────────┴─────────────────────┐
+                       │                                           │
+                       ▼                                           ▼
+        ┌───────────────────────────────┐           ┌───────────────────────────────┐
+        │        Host 1: "nginx"        │           │        Host 2: "media"        │
+        │     Reverse Proxy & WAF       │           │    Media & Automation Stack   │
+        ├───────────────────────────────┤           ├───────────────────────────────┤
+        │ • NPMPlus (Nginx Proxy)       │           │ • Jellyfin Media Server       │
+        │ • CrowdSec AppSec WAF         │           │ • Sonarr / Radarr / Prowlarr  │
+        │ • GeoIP2 Radical Filter (444) │           │ • QBittorrent & Cross-Seed    │
+        │ • Arcane Management UI        │           │ • Gluetun WireGuard VPN       │
+        └───────────────────────────────┘           └───────────────────────────────┘
 ```
+
+---
+
+## 💻 Host Breakdown
+
+### 1. `nginx` — Edge Reverse Proxy & WAF
+
+- **NPMPlus**: Nginx Proxy Manager running in host network mode (`--network=host`) for true client IP logging and Real IP restoration.
+- **CrowdSec LAPI & AppSec WAF**: Real-time threat intelligence and layer-7 Web Application Firewall protecting upstream proxy hosts against SQLi, XSS, and bot scans.
+- **GeoIP2 Filter**: Automated MaxMind database updater with a global Nginx policy returning `444` (Connection Closed) for traffic outside Europe and the US.
+- **Arcane**: Centralized Docker container management web dashboard.
+
+### 2. `media` — Media Server & Automation Stack
+
+- **Media Suite**: Jellyfin Media Server for streaming.
+- **Automation (*Arr Stack)**: Sonarr, Radarr, Prowlarr, ...
+- **Download Engine**: QBittorrent routed securely through a Gluetun WireGuard VPN tunnel with dynamic port forwarding.
+
+---
+
+## 📂 Repository Structure
+
+```text
 .
-├── Justfile                     # Deployment and log commands for local workstation
-├── README.md                    # Complete project documentation
-├── flake.nix                    # NixOS Flake entrypoint
-├── encrypt-secrets.sh           # Script to encrypt local .env to SOPS
-├── crowdsec/                    # Defragmented CrowdSec configuration
-│   ├── npmplus.yaml             # Nginx log parsing & AppSec WAF listener
-│   └── npmplus-crowdsec.conf    # Nginx bouncer template (LAPI, Turnstile, WAF)
-├── secrets/
-│   └── containers.yaml          # SOPS-encrypted secrets file (Age / SSH host key)
-└── configuration/
-    ├── configuration.nix        # Core system (User, Shell, SSH, Firewall, Podman)
-    ├── containers.nix           # OCI Container definitions (NPMPlus, CrowdSec, Arcane...)
-    ├── secrets.nix              # SOPS-nix templates and secret injections
-    ├── services.nix             # Automatic upgrades (NixOS + Podman) & GC cleanup
-    ├── hardware-configuration.nix
-    └── etc/
-        ├── server.just          # Server-side helper commands installed at /Justfile
-        ├── fastfetch.jsonc      # Fastfetch login screen configuration
-        └── p10k                 # Zsh Powerlevel10k theme configuration
+├── Justfile                     # Local deployment & secret management recipes
+├── flake.nix                    # Multi-host Flake output declarations (nginx, media)
+├── encrypt-secrets.sh           # Per-host SOPS secret generator script
+│
+├── modules/                     # Shared NixOS modules across all hosts
+│   ├── base.nix                 # Core OS, Zsh, SSH, Tailscale, Podman, and sudo
+│   ├── services.nix             # Automatic upgrades, cleanup timers, and container updates
+│   └── etc/                     # Shared terminal assets (Fastfetch, Powerlevel10k, Justfile)
+│
+├── hosts/                       # Per-host specific configurations
+│   ├── nginx/                   # Proxy host configuration
+│   │   ├── configuration.nix    # Host network & firewall rules
+│   │   ├── containers.nix       # NPMPlus, CrowdSec, Arcane, GeoIP containers
+│   │   ├── console.nix          # Cyan theme fastfetch & TTY1 autologin
+│   │   └── secrets.nix          # SOPS secret bindings for Proxy
+│   │
+│   └── media/                   # Media host configuration
+│       ├── configuration.nix    # Host network & media firewall rules
+│       ├── containers.nix       # *Arr stack & Gluetun containers
+│       ├── console.nix          # Red dual-tone fastfetch & TTY1 autologin
+│       └── secrets.nix          # SOPS secret bindings for Media & WireGuard
+│
+├── crowdsec/                    # Nginx acquisition rules & GeoIP block maps
+└── secrets/                     # Encrypted SOPS secret stores (nginx.yaml, media.yaml)
 ```
 
 ---
 
-### Adapting This Configuration for Your Own Server
+## 🔒 Secret Management (SOPS-nix & Age)
 
-#### 1. Customize User & SSH Key
-In `configuration/configuration.nix`:
-- Change `users.users.lego` to your desired username.
-- Replace the public key in `openssh.authorizedKeys.keys` with your SSH Ed25519 public key.
+Secrets are encrypted using [SOPS](https://github.com/getsops/sops) and `Age` public-key cryptography tied to each host's SSH host key (`/etc/ssh/ssh_host_ed25519_key`). No plaintext credentials exist in Git or the Nix Store.
 
-#### 2. Configure Hostname & Network Interface
-In `configuration/configuration.nix`:
-- `networking.hostName`: Set your target server's hostname.
-- `networking.firewall.interfaces.ens18`: Replace `ens18` with your primary network interface (e.g. `eth0`, `enp1s0`).
+### Adding a New Host Key
 
-#### 3. Setup Secrets with SOPS-nix
+To onboard a new host key into `.sops.yaml`:
 
-##### Step A: Create local `.env` file (excluded from Git)
-Create a `.env` file at the repository root with your actual credentials:
-```ini
-ARCANE_ENCRYPTION_KEY=your_32_character_arcane_key
-ARCANE_JWT_SECRET=your_jwt_secret
-ACME_EMAIL=your-email@domain.com
-GEOIPUPDATE_ACCOUNT_ID=your_maxmind_account_id
-GEOIPUPDATE_LICENSE_KEY=your_maxmind_license_key
-BOUNCER_API_KEY=your_custom_crowdsec_bouncer_key
-TURNSTILE_SECRET_KEY=your_cloudflare_turnstile_secret_key
-TURNSTILE_SITE_KEY=your_cloudflare_turnstile_site_key
-```
-
-##### Step B: Convert server SSH key to Age key using `ssh-to-age`
-SOPS decrypts secrets on the host using the server's SSH host key (`/etc/ssh/ssh_host_ed25519_key`). You need to retrieve its corresponding Age public key to authorize it in `.sops.yaml`:
-
-- **Option 1: Directly from target server via Nix**
-  ```bash
-  ssh user@<server-ip> "sudo nix run nixpkgs#ssh-to-age -- < /etc/ssh/ssh_host_ed25519_key.pub"
-  ```
-- **Option 2: Locally (with ssh-to-age binary installed)**
-  ```bash
-  ssh-to-age < /path/to/ssh_host_ed25519_key.pub
-  ```
-  *(Example output: `age1mg58jgrdvumx7d85axdd2gmgcmqh7838lxsh8gqvjts5uwtez4kq65a54a`)*
-
-Copy the generated key into your `.sops.yaml` under the `keys` section.
-
-##### Step C: Encrypt secrets file
-Run the encryption helper:
 ```bash
-just encrypt
-# or run directly: ./encrypt-secrets.sh
+cat /etc/ssh/ssh_host_ed25519_key.pub | nix run nixpkgs#ssh-to-age
 ```
-This generates the encrypted `secrets/containers.yaml` file, ready to be committed to Git.
+
+### Encrypting Secrets
+
+Update your local `.env` or `.env.<target>` file and run:
+
+```bash
+just encrypt nginx   # Encrypts proxy secrets into secrets/nginx.yaml
+just encrypt media   # Encrypts media secrets into secrets/media.yaml
+```
 
 ---
 
-### Command Reference (`Justfile`)
+## 🚀 Deployment & Operations
 
-#### From Local Workstation (Mac)
-```bash
-just deploy <server-ip>      # Syncs files via rsync and runs nixos-rebuild switch
-just test <server-ip>        # Tests configuration without persisting changes
-just diff <server-ip>        # Shows package/service diff before switching
-just encrypt                 # Encrypts local .env -> secrets/containers.yaml
-```
+Deployment is triggered remotely from your local workstation using `just`:
 
-#### Directly on the NixOS Server (via `/Justfile`)
+| Command                       | Description                                                                 |
+| :---------------------------- | :-------------------------------------------------------------------------- |
+| `just deploy <ip> <target>` | Syncs repository and rebuilds target configuration (`nginx` or `media`) |
+| `just test <ip> <target>`   | Tests target configuration without making it permanent                      |
+| `just diff <ip> <target>`   | Displays configuration diff between current and new generation              |
+| `just encrypt <target>`     | Encrypts local environment variables into SOPS YAML files                   |
+
+### Deployment Examples
+
 ```bash
-just ps                      # Lists Podman container statuses
-just logs npmplus            # Last 500 lines of NPMPlus logs + live tailing
-just logs-full crowdsec      # Complete untruncated CrowdSec log history
-just logs-all                # Combined logs from all running containers
-just restart arcane          # Restarts a container service
-just gc                      # Runs Nix Garbage Collector (prunes old generations)
-just info                    # Displays Fastfetch system dashboard
+# Deploy Reverse Proxy host
+just deploy 192.168.1.101 nginx
+
+# Deploy Media Stack host
+just deploy 192.168.1.102 media
 ```

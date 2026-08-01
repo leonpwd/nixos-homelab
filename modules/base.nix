@@ -1,16 +1,7 @@
 { config, lib, pkgs, ... }:
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./services.nix
-    ./secrets.nix
-    ./containers.nix
-    ./console.nix
-  ];
+  # ── Base System ───────────────────────────────────────────────────────────────
 
-  # ── Système de base ────────────────────────────────────────────────────────────
-
-  networking.hostName = "nginx";
   time.timeZone = "Europe/Paris";
   i18n.defaultLocale = "fr_FR.UTF-8";
 
@@ -29,7 +20,7 @@
     allowed-users  = [ "root" "@wheel" ];
   };
 
-  # ── Utilisateurs ───────────────────────────────────────────────────────────────
+  # ── Users ──────────────────────────────────────────────────────────────────────
 
   users.mutableUsers = false;
 
@@ -45,7 +36,7 @@
 
   users.users.root.hashedPassword = "!";
 
-  # ── Shell — zsh + Powerlevel10k ────────────────────────────────────────────────
+  # ── Shell — Zsh + Powerlevel10k ────────────────────────────────────────────────
 
   environment.shells = [ pkgs.zsh ];
 
@@ -84,7 +75,6 @@
   };
 
   environment.etc."p10k.zsh".source               = ./etc/p10k;
-  environment.etc."fastfetch/config.jsonc".source  = ./etc/fastfetch.jsonc;
 
   # ── Sudo ───────────────────────────────────────────────────────────────────────
 
@@ -123,8 +113,16 @@
     };
     openFirewall = false;
   };
+  
+  # ── Console Proxmox & Auto-Login TTY1 (Nginx Proxy Host) ──────────────────────
 
-  # ── Réseau & firewall ──────────────────────────────────────────────────────────
+  services.getty = {
+    autologinUser = "lego";
+    helpLine = lib.mkForce "";
+    greetingLine = lib.mkForce "";
+  };
+
+  # ── Network & Firewall Base ────────────────────────────────────────────────────
   
   networking.nameservers = [
     "1.1.1.1"             # Cloudflare Primary
@@ -138,32 +136,14 @@
   ];   
   
   networking.firewall = {
-  enable = true;
-  
-  # Ports globaux
-  allowedUDPPorts = [ 
-    41641 # Tailscale
-  ];
-
-  # Règles spécifiques par interface réseau
-  interfaces = {
-    # Interface publique (Internet / LAN)
-    ens18 = {
-      allowedTCPPorts = [ 22 80 443 81 ];
-      allowedUDPPorts = [ 80 443 ];
-    };
-
-    # Interface Tailscale (Réseau privé sécurisé)
-    tailscale0 = {
-      allowedTCPPorts = [ 22 ];
-    };
+    enable = true;
+    allowedUDPPorts = [ 
+      41641 # Tailscale
+    ];
+    checkReversePath = "loose";
   };
 
-  checkReversePath = "loose";
-};
-
-
-  # ── Services ───────────────────────────────────────────────────────────────────
+  # ── Shared Services (Tailscale & Podman) ───────────────────────────────────────
 
   services.tailscale.enable = true;
 
@@ -185,9 +165,9 @@
 
   virtualisation.containers.enable = true;
 
-  # ── Paquets & scripts ──────────────────────────────────────────────────────────
+  # ── Base System Packages & Scripts ─────────────────────────────────────────────
 
-  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just tree];
+  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just tree ];
 
   system.activationScripts.serverJustfile = lib.stringAfter [ "users" ] ''
     install -m 644 ${./etc/server.just} /Justfile

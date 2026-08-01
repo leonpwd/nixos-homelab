@@ -1,5 +1,5 @@
 {
-  description = "Base NixOS server with Tailscale and Podman";
+  description = "Multi-host NixOS Infrastructure (Proxy & Media)";
 
   inputs = {
     nixpkgs.url  = "github:NixOS/nixpkgs/nixos-26.05";
@@ -11,12 +11,26 @@
     let
       system = "x86_64-linux";
     in {
-      nixosConfigurations.nginx = nixpkgs.lib.nixosSystem {
-        inherit system;
-        modules = [
-          sops-nix.nixosModules.sops
-          ./configuration/configuration.nix
-        ];
+      nixosConfigurations = {
+
+        # ── Reverse Proxy & WAF Host (NPMPlus + CrowdSec + Arcane) ─────────────
+        nginx = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [
+            sops-nix.nixosModules.sops
+            ./hosts/nginx/configuration.nix
+          ];
+        };
+
+        # ── Media & *Arr Stack Host (Jellyfin, Sonarr, Radarr, Prowlarr) ─────────
+        media = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [
+            sops-nix.nixosModules.sops
+            ./hosts/media/configuration.nix
+          ];
+        };
+
       };
     };
 }

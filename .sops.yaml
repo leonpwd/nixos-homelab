@@ -1,8 +1,13 @@
 keys:
-  - &server age1mg58jgrdvumx7d85axdd2gmgcmqh7838lxsh8gqvjts5uwtez4kq65a54a
+  - &nginx_host age1gu9uhqhx3alswgq6u7tygukxv9529dp5m92tsdxsj4lthuu3rgtqxxsyaa
+  - &media_host age1v5xe49une3qvkv5qfnnw0ddufwh3vleylmu53jppaw98cchjey7sfecnff
 
 creation_rules:
-  - path_regex: secrets/.*\.yaml$
+  - path_regex: secrets/nginx\.yaml$
     key_groups:
       - age:
-        - *server
+        - *nginx_host
+  - path_regex: secrets/media\.yaml$
+    key_groups:
+      - age:
+        - *media_host

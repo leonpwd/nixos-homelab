@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }:
 {
-  # ── Mise à jour hebdomadaire — lundi 4h00 ─────────────────────────────────────
+  # ── Weekly NixOS Auto-Upgrade — Mondays 04:00 AM ──────────────────────────────
 
   system.autoUpgrade = {
     enable             = true;
@@ -12,11 +12,11 @@
     allowReboot        = false;
   };
 
-  # ── Nettoyage générations — lundi 5h00 ────────────────────────────────────────
-  # Garde les 3 dernières générations, supprime le reste, lance le GC.
+  # ── NixOS Generation Cleanup — Mondays 05:00 AM ───────────────────────────────
+  # Retains the 3 latest generations, purges old generations, runs garbage collector.
 
   systemd.services.nixos-cleanup = {
-    description = "Nettoyage des anciennes générations NixOS";
+    description = "Cleanup old NixOS system generations";
     after       = [ "network.target" ];
     serviceConfig = {
       Type = "oneshot";
@@ -39,11 +39,11 @@
     };
   };
 
-  # ── Auto-update des conteneurs Podman — tous les jours à 4h00 ─────────────────
-  # Met à jour les conteneurs ayant l'étiquette io.containers.autoupdate=registry et dangles images.
+  # ── Podman Container Auto-Update — Daily at 04:00 AM ───────────────────────────
+  # Updates containers tagged io.containers.autoupdate=registry and prunes dangling images.
 
   systemd.services.podman-auto-update = {
-    description = "Auto-update des conteneurs Podman et nettoyage des images";
+    description = "Auto-update Podman containers and prune images";
     after       = [ "network-online.target" ];
     wants       = [ "network-online.target" ];
     path        = [ pkgs.podman ];

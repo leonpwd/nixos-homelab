@@ -1,0 +1,128 @@
+// Custom fastfetch preset — media server (Dual-tone Red/Orange Nix logo)
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+
+    "logo": {
+        "padding": {
+            "top": 1,
+            "right": 2
+        },
+        "color": {
+            "1": "red",
+            "2": "yellow",
+            "3": "red",
+            "4": "yellow",
+            "5": "red",
+            "6": "yellow",
+            "7": "red",
+            "8": "yellow",
+            "9": "red"
+        }
+    },
+
+    "display": {
+        "separator": "  ",
+        "color": {
+            "separator": "red"
+        },
+        "constants": [
+            "────────────────────────────────────────────────────────────────────────────────────────────",
+            "│\u001b[92C│\u001b[92D"
+        ],
+        "bar": {
+            "border": {
+                "left":         "\uee00",
+                "leftElapsed":  "\uee03",
+                "right":        "\uee02",
+                "rightElapsed": "\uee05"
+            },
+            "char": {
+                "total":   "\uee01",
+                "elapsed": "\uee04"
+            },
+            "width": 18,
+            "color": {
+                "total": null
+            }
+        },
+        "percent": {
+            "type": 3
+        },
+        "key": {
+            "width": 14
+        }
+    },
+
+    "modules": [
+        {
+            "format": "{#1}{#keys}╭{$1}╮\u001b[93D  {user-name-colored}{at-symbol-colored}{host-name-colored}",
+            "type": "title"
+        },
+        {
+            "key":  "{$2}{#31}{icon} os      ",
+            "type": "os"
+        },
+        {
+            "key":  "{$2}{#31}󰒔 kernel  ",
+            "type": "kernel"
+        },
+        {
+            "key":  "{$2}{#31}󰅐 uptime  ",
+            "type": "uptime"
+        },
+        {
+            "format": "{#1}{#keys}├{$1}┤",
+            "type": "custom"
+        },
+        {
+            "key":  "{$2}{#31}󰌢 host    ",
+            "type": "host"
+        },
+        {
+            "key":             "{$2}{#31}󰻠 cpu     ",
+            "type":            "cpu",
+            "temp":            true,
+            "showPeCoreCount": true
+        },
+        {
+            "key":  "{$2}{#31}󰍛 gpu     ",
+            "type": "gpu"
+        },
+        {
+            "format": "{#1}{#keys}├{$1}┤",
+            "type": "custom"
+        },
+        {
+            "type": "memory",
+            "key":  "{$2}{#31}󰑭 ram     "
+        },
+        {
+            "type":    "disk",
+            "folders": "/",
+            "key":     "{$2}{#31}󰋊 disk    "
+        },
+        {
+            "format": "{#1}{#keys}├{$1}┤",
+            "type": "custom"
+        },
+        {
+            "type":   "command",
+            "key":    "{$2}{#31}󰈀 lan     ",
+            "text":   "ip -4 addr show ens18 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 || echo 'down'"
+        },
+        {
+            "type":   "command",
+            "key":    "{$2}{#31}󰕥 ts      ",
+            "text":   "ip -4 addr show tailscale0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 || echo 'down'"
+        },
+        {
+            "type":   "command",
+            "key":    "{$2}{#31}󰡨 pods    ",
+            "text":   "sudo podman ps --format '{{.Names}}' 2>/dev/null | awk 'BEGIN{ split(\"31 33 35 32 36 34\", fg, \" \"); split(\"41 43 45 42 46 44\", bg, \" \") } NF { i=(NR-1)%6+1; printf \"\\033[0;%sm\\ue0b6\\033[30;%sm %s \\033[0;%sm\\ue0b4\\033[0m \", fg[i], bg[i], $0, fg[i] } END { if (NR==0) print \"aucun\" }'"
+        },
+        {
+            "format": "{#1}{#keys}╰{$1}╯",
+            "type": "custom"
+        }
+    ]
+}
