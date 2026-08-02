@@ -11,7 +11,7 @@
 
   networking.hostName = "nginx";
 
-  environment.etc."fastfetch/config.jsonc".source = ./fastfetch.jsonc;
+  environment.etc."fastfetch/config.jsonc".source = ./etc/fastfetch.jsonc;
 
   # Specific firewall rules for Proxy host (WAN/LAN HTTP/HTTPS ports)
   networking.firewall.interfaces = {

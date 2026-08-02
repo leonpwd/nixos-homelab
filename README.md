@@ -103,19 +103,19 @@ just encrypt media   # Encrypts media secrets into secrets/media.yaml
 
 Deployment is triggered remotely from your local workstation using `just`:
 
-| Command                       | Description                                                                 |
-| :---------------------------- | :-------------------------------------------------------------------------- |
-| `just deploy <ip> <target>` | Syncs repository and rebuilds target configuration (`nginx` or `media`) |
-| `just test <ip> <target>`   | Tests target configuration without making it permanent                      |
-| `just diff <ip> <target>`   | Displays configuration diff between current and new generation              |
-| `just encrypt <target>`     | Encrypts local environment variables into SOPS YAML files                   |
+| Command | Description |
+| :--- | :--- |
+| `just deploy [target]` | Syncs repository and rebuilds target configuration (`nginx` or `media`) |
+| `just test [target]` | Tests target configuration without making it permanent |
+| `just diff [target]` | Displays configuration diff between current and new generation |
+| `just encrypt [target]` | Encrypts local environment variables into SOPS YAML files |
 
 ### Deployment Examples
 
 ```bash
-# Deploy Reverse Proxy host
-just deploy 192.168.1.101 nginx
+# Deploy Reverse Proxy host (IP read from .env / .env.nginx)
+just deploy nginx
 
-# Deploy Media Stack host
-just deploy 192.168.1.102 media
+# Deploy Media Stack host (IP read from .env / .env.media)
+just deploy media
 ```

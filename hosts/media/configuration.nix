@@ -6,23 +6,30 @@
     ../../modules/services.nix
     ./secrets.nix
     ./hardware-configuration.nix
-    #./containers.nix
+    ./containers.nix
   ];
 
   networking.hostName = "media";
 
-  environment.etc."fastfetch/config.jsonc".source = ./fastfetch.jsonc;
+  environment.etc."fastfetch/config.jsonc".source = ./etc/fastfetch.jsonc;
+
+  # ── Proxmox VirtioFS Shared Storage ──────────────────────────────────────────
+
+  fileSystems."/media/HDD1" = {
+    device = "HDD1";
+    fsType = "virtiofs";
+  };
 
   # Firewall rules for Media host (Jellyfin, Sonarr, Radarr, Prowlarr, etc.)
   networking.firewall.interfaces = {
     ens18 = {
-      allowedTCPPorts = [ 22 8096 8989 7878 9696 ];
+      allowedTCPPorts = [ 22 3553 8096 8989 7878 9696 ];
     };
     tailscale0 = {
-      allowedTCPPorts = [ 22 8096 ];
+      allowedTCPPorts = [ 22 3553 8096 ];
     };
   };
-  
+
   environment.etc."issue".text = lib.mkForce ''
 
       _____/\\\\\\\\\\\\\\\\\\______________________________________/\\\\\\\\\\__________/\\\\\\\\\\\\\\\\\\\\\\___
@@ -33,12 +40,9 @@
           _\\/\\\\\\/////////\\\\\\_\\/\\\\\\___\\///__\\/\\\\\\___\\///__\\//\\\\\\______/\\\\\\__________\\////\\\\\\___
             _\\/\\\\\\_______\\/\\\\\\_\\/\\\\\\_________\\/\\\\\\__________\\///\\\\\\__/\\\\\\_____/\\\\\\______\\//\\\\\\__
             _\\/\\\\\\_______\\/\\\\\\_\\/\\\\\\_________\\/\\\\\\____________\\///\\\\\\\\\\/_____\\///\\\\\\\\\\\\\\\\\\\\\\/___
-              _\\///________\\///__\\///__________\\///_______________\\/////_________\\///////////_____
+              _\\///________\\///__\\///__________\\///_______________\\/////_________\///////////_____
 
                                       Arr • Qbit • VPN • Jellyfin
 
-      '';
+'';
 }
-
-
-

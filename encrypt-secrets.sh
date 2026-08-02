@@ -35,6 +35,11 @@ crowdsec:
 EOF
 elif [ "$TARGET" = "media" ]; then
 cat > "$OUT_FILE" << EOF
+arcane:
+    encryption_key: "${ARCANE_ENCRYPTION_KEY:-}"
+    jwt_secret: "${ARCANE_JWT_SECRET:-}"
+    agent_token: "${ARCANE_AGENT_TOKEN:-}"
+    manager_api_url: "${ARCANE_MANAGER_API_URL:-http://192.168.1.101:3552}"
 media:
     wireguard_private_key: "${WIREGUARD_PRIVATE_KEY:-}"
     gsp_api_key: "${GSP_API_KEY:-}"

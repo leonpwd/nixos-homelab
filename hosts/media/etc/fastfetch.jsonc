@@ -118,7 +118,12 @@
         {
             "type":   "command",
             "key":    "{$2}{#31}󰡨 pods    ",
-            "text":   "sudo podman ps --format '{{.Names}}' 2>/dev/null | awk 'BEGIN{ split(\"31 33 35 32 36 34\", fg, \" \"); split(\"41 43 45 42 46 44\", bg, \" \") } NF { i=(NR-1)%6+1; printf \"\\033[0;%sm\\ue0b6\\033[30;%sm %s \\033[0;%sm\\ue0b4\\033[0m \", fg[i], bg[i], $0, fg[i] } END { if (NR==0) print \"aucun\" }'"
+            "text":   "sudo podman ps --format '{{.Names}}' 2>/dev/null | awk 'BEGIN{ split(\"31 33 35 32 36\", fg, \" \"); ORS=\"\" } NF && NR<=5 { i=(NR-1)%5+1; printf \"%s\\033[0;%sm%s\\033[0m\", (NR>1?\" • \":\"\"), fg[i], $0 } END { if (NR==0) print \"aucun\"; else print \"\" }'"
+        },
+        {
+            "type":   "command",
+            "key":    "{$2}{#31}          ",
+            "text":   "sudo podman ps --format '{{.Names}}' 2>/dev/null | awk 'BEGIN{ split(\"34 31 33 35 32\", fg, \" \"); ORS=\"\" } NF && NR>5 { i=(NR-6)%5+1; printf \"%s\\033[0;%sm%s\\033[0m\", (NR>6?\" • \":\"\"), fg[i], $0 } END { print \"\" }'"
         },
         {
             "format": "{#1}{#keys}╰{$1}╯",
