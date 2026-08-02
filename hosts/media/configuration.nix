@@ -23,10 +23,10 @@
   # Firewall rules for Media host (Jellyfin, Sonarr, Radarr, Prowlarr, etc.)
   networking.firewall.interfaces = {
     ens18 = {
-      allowedTCPPorts = [ 22 3553 8096 8989 7878 9696 ];
+      allowedTCPPorts = [ 22 3553 5055 8096 8989 7878 9696 ];
     };
     tailscale0 = {
-      allowedTCPPorts = [ 22 3553 8096 ];
+      allowedTCPPorts = [ 22 3553 5055 8096 ];
     };
   };
 

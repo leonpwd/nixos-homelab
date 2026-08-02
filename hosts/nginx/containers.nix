@@ -173,6 +173,7 @@
       "SWARM" = "0";
       "SYSTEM" = "0";
       "TASKS" = "0";
+      "TZ" = "Europe/Paris";
       "VERSION" = "1";
       "VOLUMES" = "1";
     };

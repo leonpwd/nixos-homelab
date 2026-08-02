@@ -29,6 +29,7 @@
     "d /config/qbittorrent               0750 1000 1000 -"
     "d /config/qbittorrent/vuetorrent    0750 1000 1000 -"
     "d /config/radarr                    0750 1000 1000 -"
+    "d /config/seerr                     0750 1000 1000 -"
     "d /config/sonarr                    0750 1000 1000 -"
     "d /media/HDD1                       0775 1000 1000 -"
     "d /media/HDD1/downloads             0775 1000 1000 -"
@@ -45,6 +46,7 @@
       "AGENT_MODE" = "true";
       "EDGE_TRANSPORT" = "poll";
       "DOCKER_HOST" = "tcp://docker-proxy:2375";
+      "TZ" = "Europe/Paris";
     };
     environmentFiles = [ config.sops.templates."arcane.env".path ];
     volumes = [
@@ -133,6 +135,7 @@
       "SWARM" = "0";
       "SYSTEM" = "0";
       "TASKS" = "0";
+      "TZ" = "Europe/Paris";
       "VERSION" = "1";
       "VOLUMES" = "1";
     };
@@ -204,6 +207,7 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--cap-add=NET_ADMIN"
+      "--cap-add=NET_RAW"
       "--device=/dev/net/tun:/dev/net/tun:rwm"
       "--network-alias=gluetun"
       "--network=netARR"
@@ -284,6 +288,7 @@
       "PORT" = "8081";
       "QBIT_BASE" = "http://gluetun:8080";
       "RELEASE_TYPE" = "stable";
+      "TZ" = "Europe/Paris";
     };
     volumes = [
       "/config/qbittorrent/vuetorrent:/config:rw"
@@ -368,6 +373,36 @@
     ];
   };
   systemd.services."podman-sonarr" = {
+    serviceConfig = {
+      Restart = lib.mkOverride 90 "always";
+    };
+    after = [ "podman-network-netARR.service" ];
+    requires = [ "podman-network-netARR.service" ];
+    partOf = [ "podman-compose-media-root.target" ];
+    wantedBy = [ "podman-compose-media-root.target" ];
+  };
+
+  # Seerr (Jellyseerr)
+  virtualisation.oci-containers.containers."seerr" = {
+    image = "ghcr.io/seerr-team/seerr:latest";
+    environment = {
+      "LOG_LEVEL" = "info";
+      "TZ"        = "Europe/Paris";
+    };
+    volumes = [
+      "/config/seerr:/app/config:rw"
+    ];
+    ports = [
+      "5055:5055/tcp"
+    ];
+    log-driver = "journald";
+    extraOptions = [
+      "--label=io.containers.autoupdate=registry"
+      "--network-alias=seerr"
+      "--network=netARR"
+    ];
+  };
+  systemd.services."podman-seerr" = {
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };
