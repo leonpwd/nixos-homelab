@@ -2,9 +2,9 @@
 
 USER := "lego"
 
-# Host IPs dynamically read from .env or fallback defaults
-NGINX_IP := `grep -E '^(NGINX_IP|HOST_IP)=' .env .env.nginx 2>/dev/null | head -n1 | cut -d= -f2 || echo "192.168.1.101"`
-MEDIA_IP := `grep -E '^(MEDIA_IP|HOST_IP)=' .env .env.media 2>/dev/null | head -n1 | cut -d= -f2 || echo "192.168.1.103"`
+# Host IPs dynamically read from .env (NGINX_IP and MEDIA_IP) or fallback defaults
+NGINX_IP := `grep -E '^NGINX_IP=' .env 2>/dev/null | head -n1 | cut -d= -f2 || echo "192.168.1.101"`
+MEDIA_IP := `grep -E '^MEDIA_IP=' .env 2>/dev/null | head -n1 | cut -d= -f2 || echo "192.168.1.103"`
 
 default:
     @just --list

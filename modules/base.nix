@@ -167,7 +167,7 @@
 
   # ── Base System Packages & Scripts ─────────────────────────────────────────────
 
-  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just tree ];
+  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just tree btop ncdu];
 
   system.activationScripts.serverJustfile = lib.stringAfter [ "users" ] ''
     install -m 644 ${./etc/server.just} /Justfile
