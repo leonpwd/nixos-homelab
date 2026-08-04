@@ -1,48 +1,102 @@
+
 # --- CONNEXION QBITTORRENT ---
+# ==============================================================================
 qbt:
   host: "http://gluetun:8080"
 
+# ==============================================================================
 # --- REPERTOIRES DU DISQUE ---
+# ==============================================================================
 directory:
   root_dir: "/HDD1/downloads"
   remote_dir: "/HDD1/downloads"
   recycle_bin: "/HDD1/downloads/.RecycleBin"
-  cross_seed: "/HDD1/downloads/cross-seed"
+  torrents_dir: null
+  orphaned_dir: null
 
-# --- CORBEILLE DE SÉCURITÉ (15 Jours) ---
+# ==============================================================================
+# --- CORBEILLE DE SÉCURITÉ ---
+# ==============================================================================
 recyclebin:
   enabled: true
   empty_after_x_days: 15
   save_torrents: false
   split_by_category: false
 
+# ==============================================================================
 # --- REGLAGES DE SECURITE ET TAGS ---
+# ==============================================================================
 settings:
   force_auto_tmm: false
+  force_auto_tmm_ignore_tags: []
   tracker_error_tag: "issue"
   nohardlinks_tag: "noHL"
   stalled_tag: "stalled"
   private_tag: "private"
+  share_limits_tag: "~share_limit"
+  share_limits_min_seeding_time_tag: "MinSeedTimeNotReached"
+  share_limits_min_num_seeds_tag: "MinSeedsNotMet"
+  share_limits_last_active_tag: "LastActiveLimitNotReached"
+  cat_filter_completed: true
+  share_limits_filter_completed: true
+  tag_nohardlinks_filter_completed: true
+  rem_unregistered_filter_completed: false
+  cat_update_all: true
+  disable_qbt_default_share_limits: true
+  tag_stalled_torrents: true
+  rem_unregistered_ignore_list: []
+  rem_unregistered_grace_minutes: 10
+  rem_unregistered_max_torrents: 10
 
+# ==============================================================================
 # --- COMMANDES D'EXECUTION AUTOMATIQUE ---
+# ==============================================================================
 commands:
-  recheck: true          # Re-vérifie et relance automatiquement les torrents arrêtés
-  share_limits: true     # Applique les limites de ratio et de temps de seed
-  tag_update: false      # 🚫 Pas de création automatique de tags par tracker
+  dry_run: false
+  recheck: true               # Re-vérifie et relance automatiquement les torrents arrêtés
+  share_limits: true          # Applique les limites de ratio et de temps de seed
+  tag_update: false           # 🚫 Désactivé (pas de création/mise à jour de tags)
+  cat_update: false
+  rem_unregistered: false
+  tag_tracker_error: false
+  rem_orphaned: false
+  tag_nohardlinks: false
+  skip_cleanup: false
+  skip_qb_version_check: false
 
+# ==============================================================================
 # --- CATÉGORIES ET DOSSIERS ---
+# ==============================================================================
 cat:
-  "cross-seed": "/HDD1/downloads/cross-seed"
+  cross-seed: "/HDD1/downloads/cross-seed"
 
-# --- REGLES DE SEED SPÉCIFIQUES POUR CROSS-SEED ---
+# ==============================================================================
+# --- REGLES DE SEED (SHARE LIMITS) ---
+# ==============================================================================
 share_limits:
   cross_seed_limits:
     priority: 1
-    add_group_to_tag: false    # 🚫 Pas de tag générique de limite de seed
+    add_group_to_tag: false     # 🚫 Pas de tag générique de limite de seed
     categories:
       - "cross-seed"
     include_any_tags:
       - "cross-seed"
-    max_ratio: 20              # Ratio Max: 20
-    max_seeding_time: 131400   # 131400 minutes = 3 mois exacts
-    cleanup: true              # Supprime le torrent et envoie les fichiers à la corbeille pendant 15 jours
+    max_ratio: 20               # Ratio Max: 20
+    max_seeding_time: "90d"     # 90 jours (~3 mois)
+    cleanup: true               # Envoie les fichiers dans la corbeille pendant 15 jours à l'expiration
+
+# ==============================================================================
+# --- TRACKERS (VIDE) ---
+# ==============================================================================
+tracker: {}
+
+# ==============================================================================
+# --- AUTRES OPTIONS ---
+# ==============================================================================
+orphaned:
+  empty_after_x_days: null
+  min_file_age_minutes: 30
+  max_orphaned_files_to_delete: 50
+  exclude_patterns: []
+
+webhooks: {}

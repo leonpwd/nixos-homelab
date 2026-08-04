@@ -21,9 +21,10 @@
   # ── Deterministic Host Directory Creation ─────────────────────────────────────
 
   systemd.tmpfiles.rules = [
-    "d /config/arcane-agent-data         0750 1000 1000 -"
+    "d /config/arcane-agent-data         0775 1000 1000 -"
     "d /config/cross-seed                0750 1000 1000 -"
     "d /config/gluetun                   0750 1000 1000 -"
+    "d /config/hydra-qbit                0750 1000 1000 -"
     "d /config/jellyfin                  0750 1000 1000 -"
     "d /config/prowlarr                  0750 1000 1000 -"
     "d /config/qbittorrent               0750 1000 1000 -"
@@ -183,7 +184,8 @@
     environment = {
       "DNS_UPSTREAM_RESOLVERS" = "cloudflare,quad9 secured,cloudflare security,google";
       "FIREWALL" = "on";
-      "FIREWALL_INPUT_PORTS" = "8080,8191,6881,2468";
+      "FIREWALL_INPUT_PORTS" = "8080,8191,6881,2468,8199,16171,16172";
+      "FIREWALL_VPN_INPUT_PORTS" = "16171,16172";
       "HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH" = "/home/arr/config.toml";
       "HTTP_CONTROL_SERVER_LOG" = "off";
       "PORT_FORWARD_ONLY" = "on";
@@ -192,6 +194,7 @@
       "UPDATER_PERIOD" = "24h";
       "VPN_PORT_FORWARDING" = "on";
       "VPN_PORT_FORWARDING_PROVIDER" = "protonvpn";
+      "VPN_PORT_FORWARDING_UP_COMMAND" = "/bin/sh -c 'wget -qO- --header=\"Content-Type: application/json\" --post-data=\"{\\\"port\\\":{{PORT}}}\" http://127.0.0.1:8199/api/hoard/listen-port || true'";
       "VPN_SERVICE_PROVIDER" = "protonvpn";
       "VPN_TYPE" = "wireguard";
       "WIREGUARD_IMPLEMENTATION" = "kernelspace";
@@ -207,7 +210,12 @@
       "6881:6881/udp"
       "8080:8080/tcp"
       "8191:8191/tcp"
+      "8199:8199/tcp"
       "9696:9696/tcp"
+      "16171:16171/tcp"
+      "16171:16171/udp"
+      "16172:16172/tcp"
+      "16172:16172/udp"
     ];
     log-driver = "journald";
     extraOptions = [
@@ -449,6 +457,33 @@
         chmod 644 /config/qbit_manage/config.yml
       fi
     '';
+    serviceConfig = {
+      Restart = lib.mkOverride 90 "always";
+    };
+    after = [ "podman-network-netARR.service" ];
+    requires = [ "podman-network-netARR.service" ];
+    partOf = [ "podman-compose-media-root.target" ];
+    wantedBy = [ "podman-compose-media-root.target" ];
+  };
+
+  # Hydra — High performance seedbox / qBittorrent companion (routed through Gluetun)
+  virtualisation.oci-containers.containers."hydra" = {
+    image = "ghcr.io/kheopsian/hydra:latest";
+    environment = {
+      "TZ" = "Europe/Paris";
+    };
+    volumes = [
+      "/config/hydra-qbit:/config:rw"
+      "/media/HDD1:/HDD1:rw"
+    ];
+    dependsOn = [ "gluetun" ];
+    log-driver = "journald";
+    extraOptions = [
+      "--label=io.containers.autoupdate=registry"
+      "--network=container:gluetun"
+    ];
+  };
+  systemd.services."podman-hydra" = {
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };

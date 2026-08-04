@@ -43,8 +43,8 @@ module.exports = {
     linkDirs: ["/HDD1/downloads/cross-seed"],
 
     // --- RECHERCHE & MATCHING ---
-    matchMode: "risky",
-    fuzzySizeThreshold: 0.1,
+    matchMode: "flexible",          // 💡 Permet le matching malgré le renommage Radarr/Sonarr
+    fuzzySizeThreshold: 0.02,       // 🔒 Réduit la tolérance à 2% max (évite d'associer 2 releases différentes)
     snatchTimeout: "1 minute",
     searchTimeout: "3 minutes",
 
