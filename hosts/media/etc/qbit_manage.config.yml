@@ -1,8 +1,6 @@
 # --- CONNEXION QBITTORRENT ---
 qbt:
   host: "http://gluetun:8080"
-  user: "lego"
-  pass: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 # --- REPERTOIRES DU DISQUE ---
 directory:

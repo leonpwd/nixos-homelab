@@ -425,6 +425,7 @@
       "PGID"       = "1000";
       "PUID"       = "1000";
       "QBM_DOCKER" = "true";
+      "QBT_SCHEDULE" = "720";
       "TZ"         = "Europe/Paris";
     };
     volumes = [
