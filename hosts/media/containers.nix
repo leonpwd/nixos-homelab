@@ -182,7 +182,7 @@
   virtualisation.oci-containers.containers."gluetun" = {
     image = "ghcr.io/qdm12/gluetun:latest";
     environment = {
-      "DNS_UPSTREAM_RESOLVERS" = "cloudflare,quad9 secured,cloudflare security,google";
+      "DNS_UPSTREAM_RESOLVERS" = "cloudflare,cloudflare security,google";
       "FIREWALL" = "on";
       "FIREWALL_INPUT_PORTS" = "8080,8191,6881,2468,8199,16171,16172";
       "FIREWALL_VPN_INPUT_PORTS" = "16171,16172";
