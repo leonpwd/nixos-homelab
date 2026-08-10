@@ -108,6 +108,8 @@
       X11Forwarding               = false;
       AllowAgentForwarding        = false;
       AllowTcpForwarding          = false;
+      PermitTunnel                = "no";
+      LogLevel                    = "VERBOSE";
       PrintMotd                   = false;
       PrintLastLog                = false;
     };
@@ -141,6 +143,32 @@
       41641 # Tailscale
     ];
     checkReversePath = "loose";
+  };
+
+  # ── Kernel Hardening (sysctl) ──────────────────────────────────────────────────
+
+  boot.kernel.sysctl = {
+    # Filesystem protections
+    "fs.protected_fifos"                          = 2;    # Prevent FIFO race conditions in world-writable dirs
+    "fs.protected_regular"                        = 2;    # Prevent writes to files owned by others in shared dirs
+    "fs.suid_dumpable"                            = 0;    # Disable core dumps for SUID processes (no memory leak)
+
+    # Kernel hardening
+    "dev.tty.ldisc_autoload"                      = 0;    # Prevent auto-loading of unused TTY line disciplines
+    "kernel.kptr_restrict"                        = 2;    # Hide kernel pointers even from root (defeats ASLR bypass)
+    "kernel.sysrq"                                = 0;    # Disable Magic SysRq key (useless on headless servers)
+    "kernel.unprivileged_bpf_disabled"            = 1;    # Prevent unprivileged BPF (many CVEs) — root Podman unaffected
+
+    # BPF JIT hardening
+    "net.core.bpf_jit_harden"                     = 2;    # Harden BPF JIT against constant-blinding attacks
+
+    # Network: anti-spoofing & logging
+    "net.ipv4.conf.all.log_martians"              = 1;    # Log packets with impossible source IPs (detect spoofing)
+    "net.ipv4.conf.all.send_redirects"            = 0;    # Don't send ICMP redirects (we're not a router)
+    "net.ipv4.conf.default.accept_redirects"      = 0;    # Reject incoming ICMP redirects (MITM prevention)
+    "net.ipv4.conf.default.log_martians"          = 1;    # Same as above for new interfaces (Podman veth)
+    "net.ipv6.conf.all.accept_redirects"          = 0;    # Reject ICMPv6 redirects
+    "net.ipv6.conf.default.accept_redirects"      = 0;    # Same for new IPv6 interfaces
   };
 
   # ── Shared Services (Tailscale & Podman) ───────────────────────────────────────
