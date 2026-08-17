@@ -9,7 +9,11 @@
     dates              = "Mon 04:00";
     randomizedDelaySec = "30min";
     persistent         = true;
-    allowReboot        = false;
+    allowReboot        = true;
+    rebootWindow = {
+      lower = "04:00";
+      upper = "06:00";
+    };
   };
 
   # ── NixOS Generation Cleanup — Mondays 05:00 AM ───────────────────────────────
