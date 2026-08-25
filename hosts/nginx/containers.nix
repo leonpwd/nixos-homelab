@@ -225,7 +225,7 @@
   virtualisation.oci-containers.containers."npmplus" = {
     image = "docker.io/zoeyvid/npmplus:latest";
     environment = {
-      "CLOUDFLARE_REAL_IP" = "true";
+      "TRUST_CLOUDFLARE" = "true";
       "IPV4_DNS" = "1.1.1.1 8.8.8.8";
       "IPV6_DNS" = "2606:4700:4700::1111 2606:4700:4700::1001";
       "LOGROTATE" = "true";
@@ -249,7 +249,8 @@
       chmod 644 /config/npmplus/crowdsec/crowdsec.conf
 
       mkdir -p /config/npmplus/custom_nginx
-      cp -f ${../../crowdsec/geoip_map.conf} /config/npmplus/custom_nginx/http.conf
+      # Combine GeoIP map + custom log_format (both need http {} context)
+      cat ${../../crowdsec/geoip_map.conf} ${./etc/nginx_log_format.conf} > /config/npmplus/custom_nginx/http.conf
       cp -f ${../../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/server_proxy.conf
       cp -f ${../../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/location_proxy.conf
       chmod 644 /config/npmplus/custom_nginx/http.conf /config/npmplus/custom_nginx/server_proxy.conf /config/npmplus/custom_nginx/location_proxy.conf
