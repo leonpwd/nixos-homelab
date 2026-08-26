@@ -5,7 +5,6 @@ module.exports = {
     // --- CONNEXION PROWLARR ---
     torznab: [
         "http://gluetun:9696/1/api?apikey=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "http://gluetun-freebox:9696/2/api?apikey=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     ],
 
     // --- CONNEXIONS ARRS ---
