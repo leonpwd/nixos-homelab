@@ -33,9 +33,17 @@
     "d /config/radarr                    0750 1000 1000 -"
     "d /config/seerr                     0750 1000 1000 -"
     "d /config/sonarr                    0750 1000 1000 -"
+    "d /config/navidrome                 0750 1000 1000 -"
+    "d /config/explo                     0750 1000 1000 -"
+    "d /config/slskd                     0750 1000 1000 -"
+    "d /config/beets                     0750 1000 1000 -"
     "d /media/HDD1                       0775 1000 1000 -"
     "d /media/HDD1/downloads             0775 1000 1000 -"
     "d /media/HDD1/downloads/cross-seed  0775 1000 1000 -"
+    "d /media/HDD1/media/Music           0775 1000 1000 -"
+    "d /media/HDD1/media/Music/Inbox     0775 1000 1000 -"
+    "d /media/HDD1/media/Music/Inbox/complete   0775 1000 1000 -"
+    "d /media/HDD1/media/Music/Inbox/incomplete 0775 1000 1000 -"
   ];
 
   virtualisation.oci-containers.backend = "podman";
@@ -184,7 +192,7 @@
     environment = {
       "DNS_UPSTREAM_RESOLVERS" = "cloudflare,cloudflare security,google";
       "FIREWALL" = "on";
-      "FIREWALL_INPUT_PORTS" = "8080,8191,6881,2468,8199,16171,16172";
+      "FIREWALL_INPUT_PORTS" = "5030,8080,8191,6881,2468,8199,16171,16172";
       "FIREWALL_VPN_INPUT_PORTS" = "16171,16172";
       "HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH" = "/home/arr/config.toml";
       "HTTP_CONTROL_SERVER_LOG" = "off";
@@ -216,6 +224,7 @@
       "16171:16171/udp"
       "16172:16172/tcp"
       "16172:16172/udp"
+      "5030:5030/tcp"
     ];
     log-driver = "journald";
     extraOptions = [
@@ -235,6 +244,149 @@
     requires = [ "podman-network-netARR.service" ];
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];
+  };
+
+  # slskd — Soulseek client. Sharing Gluetun's network namespace guarantees
+  # that all Soulseek traffic exits through the VPN.
+  virtualisation.oci-containers.containers."slskd" = {
+    image = "docker.io/slskd/slskd:latest";
+    environment = {
+      "SLSKD_REMOTE_CONFIGURATION" = "true";
+      "SLSKD_REMOTE_FILE_MANAGEMENT" = "true";
+      "SLSKD_DOWNLOADS_DIR" = "/downloads/complete";
+      "SLSKD_INCOMPLETE_DIR" = "/downloads/incomplete";
+      "SLSKD_SHARED_DIR" = "/music";
+      "SLSKD_SLSK_LISTEN_PORT" = "50300";
+      "SLSKD_UMASK" = "002";
+      "SLSKD_VPN" = "true";
+      "SLSKD_VPN_PORT_FORWARDING" = "true";
+      "SLSKD_VPN_GLUETUN_URL" = "http://127.0.0.1:8000";
+      "TZ" = "Europe/Paris";
+    };
+    environmentFiles = [ config.sops.templates."slskd.env".path ];
+    volumes = [
+      "/config/slskd:/app:rw"
+      "/media/HDD1/media/Music/Inbox:/downloads:rw"
+      "/media/HDD1/media/Music:/music:ro"
+    ];
+    dependsOn = [ "gluetun" ];
+    user = "1000:1000";
+    log-driver = "journald";
+    extraOptions = [
+      "--label=io.containers.autoupdate=registry"
+      "--network=container:gluetun"
+    ];
+  };
+  systemd.services."podman-slskd" = {
+    serviceConfig.Restart = lib.mkOverride 90 "always";
+    partOf = [ "podman-compose-media-root.target" ];
+    wantedBy = [ "podman-compose-media-root.target" ];
+  };
+
+  # Navidrome — Subsonic-compatible music server.
+  virtualisation.oci-containers.containers."navidrome" = {
+    image = "docker.io/deluan/navidrome:latest";
+    environment = {
+      "ND_LOGLEVEL" = "info";
+      "ND_SCANSCHEDULE" = "1m";
+      "ND_SESSIONTIMEOUT" = "24h";
+      "TZ" = "Europe/Paris";
+    };
+    volumes = [
+      "/config/navidrome:/data:rw"
+      "/media/HDD1/media/Music:/music:ro"
+    ];
+    ports = [ "4533:4533/tcp" ];
+    user = "1000:1000";
+    log-driver = "journald";
+    extraOptions = [
+      "--label=io.containers.autoupdate=registry"
+      "--network-alias=navidrome"
+      "--network=netARR"
+    ];
+  };
+  systemd.services."podman-navidrome" = {
+    serviceConfig.Restart = lib.mkOverride 90 "always";
+    after = [ "podman-network-netARR.service" ];
+    requires = [ "podman-network-netARR.service" ];
+    partOf = [ "podman-compose-media-root.target" ];
+    wantedBy = [ "podman-compose-media-root.target" ];
+  };
+
+  # Explo — creates Navidrome playlists and controls slskd downloads.
+  virtualisation.oci-containers.containers."explo" = {
+    image = "ghcr.io/lumepart/explo:latest";
+    volumes = [
+      "${config.sops.templates."explo.env".path}:/opt/explo/.env:ro"
+      "/config/explo:/opt/explo/config:rw"
+      "/media/HDD1/media/Music:/data:rw"
+      "/media/HDD1/media/Music/Inbox:/slskd:rw"
+    ];
+    ports = [ "7288:7288/tcp" ];
+    dependsOn = [ "navidrome" "slskd" ];
+    log-driver = "journald";
+    extraOptions = [
+      "--label=io.containers.autoupdate=registry"
+      "--network-alias=explo"
+      "--network=netARR"
+    ];
+  };
+  systemd.services."podman-explo" = {
+    serviceConfig.Restart = lib.mkOverride 90 "always";
+    after = [ "podman-network-netARR.service" ];
+    requires = [ "podman-network-netARR.service" ];
+    partOf = [ "podman-compose-media-root.target" ];
+    wantedBy = [ "podman-compose-media-root.target" ];
+  };
+
+  # Beets — tags new tracks from Music/Inbox with MusicBrainz metadata and
+  # moves them into the canonical Artist/Album/Track structure.
+  virtualisation.oci-containers.containers."beets" = {
+    image = "lscr.io/linuxserver/beets:latest";
+    environment = {
+      "PUID" = "1000";
+      "PGID" = "1000";
+      "TZ" = "Europe/Paris";
+    };
+    volumes = [
+      "/config/beets:/config:rw"
+      "/media/HDD1/media/Music:/music:rw"
+      "/media/HDD1/media/Music/Inbox/complete:/downloads:rw"
+      "${./etc/beets.config.yaml}:/config/config.yaml:ro"
+    ];
+    ports = [ "8337:8337/tcp" ];
+    log-driver = "journald";
+    extraOptions = [
+      "--label=io.containers.autoupdate=registry"
+      "--network-alias=beets"
+      "--network=netARR"
+    ];
+  };
+  systemd.services."podman-beets" = {
+    serviceConfig.Restart = lib.mkOverride 90 "always";
+    after = [ "podman-network-netARR.service" ];
+    requires = [ "podman-network-netARR.service" ];
+    partOf = [ "podman-compose-media-root.target" ];
+    wantedBy = [ "podman-compose-media-root.target" ];
+  };
+
+  systemd.services."beets-import" = {
+    description = "Tag and organize new Soulseek music with Beets";
+    after = [ "podman-beets.service" ];
+    requires = [ "podman-beets.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.podman}/bin/podman exec beets beet import -q /downloads";
+    };
+  };
+
+  systemd.timers."beets-import" = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "10min";
+      OnUnitActiveSec = "1h";
+      Persistent = true;
+    };
   };
 
   # Prowlarr

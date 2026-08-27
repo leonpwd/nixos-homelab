@@ -43,6 +43,15 @@ arcane:
 media:
     wireguard_private_key: "${WIREGUARD_PRIVATE_KEY:-}"
     gsp_api_key: "${GSP_API_KEY:-}"
+music:
+    listenbrainz_user: "${LISTENBRAINZ_USER:-}"
+    navidrome_username: "${NAVIDROME_USERNAME:-}"
+    navidrome_password: "${NAVIDROME_PASSWORD:-}"
+    slskd_api_key: "${SLSKD_API_KEY:-}"
+    slskd_web_username: "${SLSKD_WEB_USERNAME:-}"
+    slskd_web_password: "${SLSKD_WEB_PASSWORD:-}"
+    soulseek_username: "${SOULSEEK_USERNAME:-}"
+    soulseek_password: "${SOULSEEK_PASSWORD:-}"
 EOF
 fi
 

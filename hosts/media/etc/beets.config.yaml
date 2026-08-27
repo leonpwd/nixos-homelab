@@ -1,0 +1,35 @@
+directory: /music
+library: /config/musiclibrary.db
+
+import:
+  move: true
+  copy: false
+  write: true
+  autotag: true
+  quiet: true
+  quiet_fallback: skip
+  incremental: true
+  log: /config/import.log
+
+paths:
+  default: $albumartist/$album%aunique{}/$track $title
+  singleton: Singles/$artist/$title
+  comp: Compilations/$album%aunique{}/$track $title
+
+plugins: musicbrainz fetchart embedart scrub lastgenre web
+
+fetchart:
+  auto: true
+  cautious: true
+
+embedart:
+  auto: true
+  remove_art_file: false
+
+lastgenre:
+  auto: true
+  source: track
+
+web:
+  host: 0.0.0.0
+  port: 8337
