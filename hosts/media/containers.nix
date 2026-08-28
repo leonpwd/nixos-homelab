@@ -7,7 +7,10 @@
 
   virtualisation.podman = {
     enable = true;
-    autoPrune.enable = true;
+    autoPrune = {
+      enable = true;
+      flags = [ "--all" ];
+    };
     dockerCompat = true;
   };
 
@@ -29,7 +32,6 @@
     "d /config/prowlarr                  0750 1000 1000 -"
     "d /config/qbittorrent               0750 1000 1000 -"
     "d /config/qbittorrent/vuetorrent    0750 1000 1000 -"
-    "d /config/qbit_manage               0750 1000 1000 -"
     "d /config/radarr                    0750 1000 1000 -"
     "d /config/seerr                     0750 1000 1000 -"
     "d /config/sonarr                    0750 1000 1000 -"
@@ -569,46 +571,6 @@
     ];
   };
   systemd.services."podman-seerr" = {
-    serviceConfig = {
-      Restart = lib.mkOverride 90 "always";
-    };
-    after = [ "podman-network-netARR.service" ];
-    requires = [ "podman-network-netARR.service" ];
-    partOf = [ "podman-compose-media-root.target" ];
-    wantedBy = [ "podman-compose-media-root.target" ];
-  };
-
-  # qbit_manage — Automated qBittorrent manager
-  virtualisation.oci-containers.containers."qbit-manage" = {
-    image = "ghcr.io/stuffanthings/qbit_manage:latest";
-    environment = {
-      "PGID"       = "1000";
-      "PUID"       = "1000";
-      "QBM_DOCKER" = "true";
-      "QBT_SCHEDULE" = "720";
-      "TZ"         = "Europe/Paris";
-    };
-    volumes = [
-      "/config/qbit_manage:/config:rw"
-      "/media/HDD1:/HDD1:rw"
-    ];
-    dependsOn = [ "gluetun" ];
-    log-driver = "journald";
-    extraOptions = [
-      "--label=io.containers.autoupdate=registry"
-      "--network-alias=qbit-manage"
-      "--network=netARR"
-    ];
-  };
-  systemd.services."podman-qbit-manage" = {
-    preStart = ''
-      mkdir -p /config/qbit_manage
-      if [ ! -f /config/qbit_manage/config.yml ]; then
-        cp -f ${./etc/qbit_manage.config.yml} /config/qbit_manage/config.yml
-        chown -R 1000:1000 /config/qbit_manage
-        chmod 644 /config/qbit_manage/config.yml
-      fi
-    '';
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };

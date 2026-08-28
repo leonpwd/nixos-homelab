@@ -57,7 +57,8 @@
     };
     script = ''
       podman auto-update
-      podman image prune -f
+      podman image prune -a -f
+      podman container prune -f
     '';
   };
 
