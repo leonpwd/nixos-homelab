@@ -24,6 +24,7 @@ sync target="nginx":
     rsync -av --rsync-path="sudo rsync" \
       --exclude='.git/' \
       --exclude='.env*' \
+      --exclude='flake.lock' \
       --exclude='docker-compose nginx.yml' \
       ./ {{ USER }}@$HOST_IP:/etc/nixos/
 
@@ -31,7 +32,7 @@ sync target="nginx":
 deploy target="nginx": (sync target)
     @HOST_IP=$([ "{{ target }}" = "media" ] && echo "{{ MEDIA_IP }}" || echo "{{ NGINX_IP }}"); \
     echo "🚀 Rebuilding NixOS configuration for {{ target }} ($HOST_IP)..."; \
-    ssh {{ USER }}@$HOST_IP "sudo systemctl stop nixos-rebuild-switch-to-configuration.service 2>/dev/null || true; sudo systemctl daemon-reload; sudo nixos-rebuild switch --flake path:/etc/nixos#{{ target }}"
+    ssh {{ USER }}@$HOST_IP "sudo rm -rf /etc/nixos/.git 2>/dev/null || true; sudo nix flake update --flake /etc/nixos; sudo systemctl stop nixos-rebuild-switch-to-configuration.service 2>/dev/null || true; sudo systemctl daemon-reload; sudo nixos-rebuild switch --flake path:/etc/nixos#{{ target }}"
 
 # Sync + nixos-rebuild test (usage: just test nginx or just test media)
 test target="nginx": (sync target)

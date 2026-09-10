@@ -4,6 +4,12 @@
 
   time.timeZone = "Europe/Paris";
   i18n.defaultLocale = "fr_FR.UTF-8";
+  i18n.supportedLocales = [
+    "fr_FR.UTF-8/UTF-8"
+    "en_US.UTF-8/UTF-8"
+  ];
+
+  zramSwap.enable = true;
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -16,6 +22,7 @@
 
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
+    auto-optimise-store = true;
     trusted-users  = [ "root" ];
     allowed-users  = [ "root" "@wheel" ];
   };
