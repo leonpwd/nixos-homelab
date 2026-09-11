@@ -2,7 +2,7 @@
   description = "Multi-host NixOS Infrastructure (Proxy & Media)";
 
   inputs = {
-    nixpkgs.url  = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs.url  = "github:NixOS/nixpkgs/nixos-unstable";
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
   };
