@@ -18,12 +18,6 @@
   networking.useDHCP = lib.mkDefault true;
   networking.networkmanager.enable = false;
 
-  nixpkgs.overlays = [
-    (final: prev: {
-      buildGo125Module = final.buildGoModule;
-    })
-  ];
-
   # ── Nix ────────────────────────────────────────────────────────────────────────
 
   nix.settings = {
@@ -137,10 +131,10 @@
   
   # ── Logging (Journald) ─────────────────────────────────────────────────────────
 
-  services.journald.settings.Journal = {
-    SystemMaxUse = "200M";
-    SystemMaxFileSize = "50M";
-  };
+  services.journald.extraConfig = ''
+    SystemMaxUse=200M
+    SystemMaxFileSize=50M
+  '';
 
   # ── Console Proxmox & Auto-Login TTY1 (Nginx Proxy Host) ──────────────────────
 
