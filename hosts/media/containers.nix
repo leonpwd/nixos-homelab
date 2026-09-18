@@ -39,6 +39,7 @@
     "d /config/explo                     0750 1000 1000 -"
     "d /config/slskd                     0750 1000 1000 -"
     "d /config/beets                     0750 1000 1000 -"
+    "d /config/tino                      0750 1234 1234 -"
     "d /media/HDD1                       0775 1000 1000 -"
     "d /media/HDD1/downloads             0775 1000 1000 -"
     "d /media/HDD1/downloads/cross-seed  0775 1000 1000 -"
@@ -261,8 +262,7 @@
       "SLSKD_SLSK_LISTEN_PORT" = "50300";
       "SLSKD_UMASK" = "002";
       "SLSKD_VPN" = "true";
-      "SLSKD_VPN_PORT_FORWARDING" = "true";
-      "SLSKD_VPN_GLUETUN_URL" = "http://127.0.0.1:8000";
+      "SLSKD_VPN_PORT_FORWARDING" = "false";
       "TZ" = "Europe/Paris";
     };
     environmentFiles = [ config.sops.templates."slskd.env".path ];
@@ -598,6 +598,38 @@
     ];
   };
   systemd.services."podman-hydra" = {
+    serviceConfig = {
+      Restart = lib.mkOverride 90 "always";
+    };
+    after = [ "podman-network-netARR.service" ];
+    requires = [ "podman-network-netARR.service" ];
+    partOf = [ "podman-compose-media-root.target" ];
+    wantedBy = [ "podman-compose-media-root.target" ];
+  };
+
+  # Tino — Collaborative Typst editor (https://github.com/confirm/tino)
+  virtualisation.oci-containers.containers."tino" = {
+    image = "ghcr.io/confirm/tino:latest";
+    environment = {
+      "TINO_AUTH_DISABLED" = "true";
+      "TINO_BASE_URL" = "http://localhost:5000";
+      "TZ" = "Europe/Paris";
+    };
+    volumes = [
+      "/config/tino:/data:rw"
+    ];
+    ports = [
+      "5000:5000/tcp"
+    ];
+    log-driver = "journald";
+    extraOptions = [
+      "--label=io.containers.autoupdate=registry"
+      "--network-alias=tino"
+      "--network=netARR"
+      "--tmpfs=/tmp:rw,size=512M"
+    ];
+  };
+  systemd.services."podman-tino" = {
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };

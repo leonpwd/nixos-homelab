@@ -18,6 +18,12 @@
   networking.useDHCP = lib.mkDefault true;
   networking.networkmanager.enable = false;
 
+  nixpkgs.overlays = [
+    (final: prev: {
+      buildGo125Module = final.buildGoModule;
+    })
+  ];
+
   # ── Nix ────────────────────────────────────────────────────────────────────────
 
   nix.settings = {
@@ -25,6 +31,12 @@
     auto-optimise-store = true;
     trusted-users  = [ "root" ];
     allowed-users  = [ "root" "@wheel" ];
+  };
+
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 14d";
   };
 
   # ── Users ──────────────────────────────────────────────────────────────────────
@@ -123,6 +135,13 @@
     openFirewall = false;
   };
   
+  # ── Logging (Journald) ─────────────────────────────────────────────────────────
+
+  services.journald.settings.Journal = {
+    SystemMaxUse = "200M";
+    SystemMaxFileSize = "50M";
+  };
+
   # ── Console Proxmox & Auto-Login TTY1 (Nginx Proxy Host) ──────────────────────
 
   services.getty = {
