@@ -47,6 +47,8 @@
     "d /media/HDD1/media/Music/Inbox     0775 1000 1000 -"
     "d /media/HDD1/media/Music/Inbox/complete   0775 1000 1000 -"
     "d /media/HDD1/media/Music/Inbox/incomplete 0775 1000 1000 -"
+    # Never index partially downloaded audio; completed tracks stay visible to Explo.
+    "f /media/HDD1/media/Music/Inbox/incomplete/.ndignore 0644 1000 1000 -"
   ];
 
   virtualisation.oci-containers.backend = "podman";
@@ -261,11 +263,21 @@
       "SLSKD_SHARED_DIR" = "/music";
       "SLSKD_SLSK_LISTEN_PORT" = "50300";
       "SLSKD_UMASK" = "002";
-      "SLSKD_VPN" = "true";
+      # Reserve Gluetun's forwarded port for the existing torrent clients.
+      # Routing and the kill switch are still provided by container:gluetun.
+      "SLSKD_VPN" = "false";
       "SLSKD_VPN_PORT_FORWARDING" = "false";
+      "SLSKD_VPN_GLUETUN_URL" = "http://127.0.0.1:8000";
       "TZ" = "Europe/Paris";
     };
     environmentFiles = [ config.sops.templates."slskd.env".path ];
+    # CLI options override persisted /app/slskd.yml settings as well.
+    cmd = [
+      "--slsk-listen-port" "50300"
+      "--vpn=false" "--vpn-port-forwarding=false"
+      "--downloads" "/downloads/complete"
+      "--incomplete" "/downloads/incomplete"
+    ];
     volumes = [
       "/config/slskd:/app:rw"
       "/media/HDD1/media/Music/Inbox:/downloads:rw"
@@ -321,8 +333,9 @@
     volumes = [
       "${config.sops.templates."explo.env".path}:/opt/explo/.env:ro"
       "/config/explo:/opt/explo/config:rw"
-      "/media/HDD1/media/Music:/data:rw"
-      "/media/HDD1/media/Music/Inbox:/slskd:rw"
+      # Beets owns file moves/tagging. Explo only controls downloads through the API.
+      "/media/HDD1/media/Music:/data:ro"
+      "/media/HDD1/media/Music/Inbox/complete:/slskd:ro"
     ];
     ports = [ "7288:7288/tcp" ];
     dependsOn = [ "navidrome" "slskd" ];
@@ -353,7 +366,6 @@
     volumes = [
       "/config/beets:/config:rw"
       "/media/HDD1/media/Music:/music:rw"
-      "/media/HDD1/media/Music/Inbox/complete:/downloads:rw"
       "${./etc/beets.config.yaml}:/config/config.yaml:ro"
     ];
     ports = [ "8337:8337/tcp" ];
@@ -378,7 +390,8 @@
     requires = [ "podman-beets.service" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${pkgs.podman}/bin/podman exec beets beet import -q /downloads";
+      # Same mount for source and destination, explicit config and non-root UID.
+      ExecStart = "${pkgs.podman}/bin/podman exec --user 1000:1000 beets beet -c /config/config.yaml import -q -s /music/Inbox/complete";
     };
   };
 
@@ -386,7 +399,7 @@
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "10min";
-      OnUnitActiveSec = "1h";
+      OnUnitInactiveSec = "5min";
       Persistent = true;
     };
   };

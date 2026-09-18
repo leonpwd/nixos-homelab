@@ -8,7 +8,10 @@ import:
   autotag: true
   quiet: true
   quiet_fallback: skip
-  incremental: true
+  # Download folders can receive more songs later: never skip a whole directory.
+  incremental: false
+  resume: false
+  duplicate_action: skip
   log: /config/import.log
 
 paths:
@@ -16,7 +19,9 @@ paths:
   singleton: Singles/$artist/$title
   comp: Compilations/$album%aunique{}/$track $title
 
-plugins: musicbrainz fetchart embedart scrub lastgenre web
+# MusicBrainz is built into Beets, not a plugin. Avoid scrub: preserve tags
+# that are not replaced by the selected metadata match.
+plugins: fetchart embedart lastgenre web
 
 fetchart:
   auto: true

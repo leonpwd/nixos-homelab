@@ -70,6 +70,8 @@
         SLSKD_URL=http://gluetun:5030
         SLSKD_API_KEY=${config.sops.placeholder."music/slskd_api_key"}
         MIGRATE_DOWNLOADS=false
+        SLSKD_MIGRATE_DOWNLOADS=false
+        SLSKD_OVERWRITE_METADATA=false
         USE_SUBDIRECTORY=false
         KEEP_PERMISSIONS=false
         EXTENSIONS=flac,mp3

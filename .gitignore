@@ -2,3 +2,4 @@ docker-compose nginx.yml
 docker-compose arr.yml
 .env
 flake.lock
+hosts/media/etc/music-setup.md
