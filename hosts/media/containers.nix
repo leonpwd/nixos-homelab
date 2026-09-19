@@ -273,6 +273,7 @@
     environmentFiles = [ config.sops.templates."slskd.env".path ];
     # CLI options override persisted /app/slskd.yml settings as well.
     cmd = [
+      "./slskd"
       "--slsk-listen-port" "50300"
       "--vpn=false" "--vpn-port-forwarding=false"
       "--downloads" "/downloads/complete"
@@ -331,7 +332,7 @@
   virtualisation.oci-containers.containers."explo" = {
     image = "ghcr.io/lumepart/explo:latest";
     volumes = [
-      "${config.sops.templates."explo.env".path}:/opt/explo/.env:ro"
+      "/config/explo/.env:/opt/explo/.env:rw"
       "/config/explo:/opt/explo/config:rw"
       # Beets owns file moves/tagging. Explo only controls downloads through the API.
       "/media/HDD1/media/Music:/data:ro"
@@ -347,6 +348,14 @@
     ];
   };
   systemd.services."podman-explo" = {
+    # The wizard writes schedules and playlist settings to .env. Seed the
+    # persistent copy from SOPS once, then let Explo manage it afterwards.
+    preStart = ''
+      install -d -m 0750 -o 1000 -g 1000 /config/explo
+      if [ ! -s /config/explo/.env ]; then
+        install -m 0600 ${config.sops.templates."explo.env".path} /config/explo/.env
+      fi
+    '';
     serviceConfig.Restart = lib.mkOverride 90 "always";
     after = [ "podman-network-netARR.service" ];
     requires = [ "podman-network-netARR.service" ];
@@ -391,7 +400,7 @@
     serviceConfig = {
       Type = "oneshot";
       # Same mount for source and destination, explicit config and non-root UID.
-      ExecStart = "${pkgs.podman}/bin/podman exec --user 1000:1000 beets beet -c /config/config.yaml import -q -s /music/Inbox/complete";
+      ExecStart = "${pkgs.podman}/bin/podman exec --user 1000:1000 beets beet -c /config/config.yaml import -q /music/Inbox/complete";
     };
   };
 

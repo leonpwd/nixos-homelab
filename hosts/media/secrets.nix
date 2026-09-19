@@ -14,6 +14,7 @@
     secrets."media/wireguard_private_key" = {};
     secrets."media/gsp_api_key"          = {};
     secrets."music/listenbrainz_user"    = {};
+    secrets."music/listenbrainz_user_token" = {};
     secrets."music/navidrome_username"   = {};
     secrets."music/navidrome_password"   = {};
     secrets."music/slskd_api_key"        = {};
@@ -62,6 +63,7 @@
       content = ''
         DISCOVERY_SERVICE=listenbrainz
         LISTENBRAINZ_USER=${config.sops.placeholder."music/listenbrainz_user"}
+        LISTENBRAINZ_USER_TOKEN=${config.sops.placeholder."music/listenbrainz_user_token"}
         EXPLO_SYSTEM=subsonic
         SYSTEM_URL=http://navidrome:4533
         SYSTEM_USERNAME=${config.sops.placeholder."music/navidrome_username"}
@@ -69,12 +71,16 @@
         DOWNLOAD_SERVICES=slskd
         SLSKD_URL=http://gluetun:5030
         SLSKD_API_KEY=${config.sops.placeholder."music/slskd_api_key"}
+        UI_USERNAME=${config.sops.placeholder."music/slskd_web_username"}
+        UI_PASSWORD=${config.sops.placeholder."music/slskd_web_password"}
         MIGRATE_DOWNLOADS=false
         SLSKD_MIGRATE_DOWNLOADS=false
         SLSKD_OVERWRITE_METADATA=false
         USE_SUBDIRECTORY=false
-        KEEP_PERMISSIONS=false
-        EXTENSIONS=flac,mp3
+        SLSKD_KEEP_PERMISSIONS=false
+        # Lossless-only automatic downloads; Explo has no sample-rate filter.
+        EXTENSIONS=flac
+        MIN_BIT_DEPTH=16
         LOG_LEVEL=INFO
       '';
       mode = "0400";

@@ -45,6 +45,7 @@ media:
     gsp_api_key: "${GSP_API_KEY:-}"
 music:
     listenbrainz_user: "${LISTENBRAINZ_USER:-}"
+    listenbrainz_user_token: "${LISTENBRAINZ_USER_TOKEN:-}"
     navidrome_username: "${NAVIDROME_USERNAME:-}"
     navidrome_password: "${NAVIDROME_PASSWORD:-}"
     slskd_api_key: "${SLSKD_API_KEY:-}"

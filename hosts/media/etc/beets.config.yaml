@@ -7,7 +7,8 @@ import:
   write: true
   autotag: true
   quiet: true
-  quiet_fallback: skip
+  # Keep tagged files when MusicBrainz has no confident match.
+  quiet_fallback: asis
   # Download folders can receive more songs later: never skip a whole directory.
   incremental: false
   resume: false
