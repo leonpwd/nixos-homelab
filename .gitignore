@@ -3,3 +3,4 @@ docker-compose arr.yml
 .env
 flake.lock
 hosts/media/etc/music-setup.md
+.DS_Store
