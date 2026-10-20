@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 {
   # ── Base System ───────────────────────────────────────────────────────────────
 
@@ -17,11 +17,17 @@
   boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.tmp.cleanOnBoot = true;
 
   networking.useDHCP = lib.mkDefault true;
   networking.networkmanager.enable = false;
 
   # ── Nix ────────────────────────────────────────────────────────────────────────
+
+  nix.channel.enable = false;
+
+  nix.registry.nixpkgs.flake = inputs.nixpkgs;
+  nix.nixPath = [ "nixpkgs=flake:nixpkgs" ];
 
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
@@ -132,11 +138,15 @@
     openFirewall = false;
   };
   
-  # ── Logging (Journald) ─────────────────────────────────────────────────────────
+  # ── Logging (Journald) & Systemd Timeouts ─────────────────────────────────────
 
   services.journald.extraConfig = ''
     SystemMaxUse=200M
     SystemMaxFileSize=50M
+  '';
+
+  systemd.extraConfig = ''
+    DefaultTimeoutStopSec=20s
   '';
 
   # ── Console Proxmox & Auto-Login TTY1 (Nginx Proxy Host) ──────────────────────
@@ -238,7 +248,7 @@
 
   # ── Base System Packages & Scripts ─────────────────────────────────────────────
 
-  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just tree btop ncdu];
+  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just tree btop ncdu jq bind.dnsutils lsof ];
 
   system.activationScripts.serverJustfile = lib.stringAfter [ "users" ] ''
     install -m 644 ${./etc/server.just} /Justfile

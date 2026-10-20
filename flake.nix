@@ -16,6 +16,7 @@
         # ── Reverse Proxy & WAF Host (NPMPlus + CrowdSec + Arcane) ─────────────
         nginx = nixpkgs.lib.nixosSystem {
           inherit system;
+          specialArgs = { inherit inputs; };
           modules = [
             sops-nix.nixosModules.sops
             ./hosts/nginx/configuration.nix
@@ -25,6 +26,7 @@
         # ── Media & *Arr Stack Host (Jellyfin, Sonarr, Radarr, Prowlarr) ─────────
         media = nixpkgs.lib.nixosSystem {
           inherit system;
+          specialArgs = { inherit inputs; };
           modules = [
             sops-nix.nixosModules.sops
             ./hosts/media/configuration.nix
