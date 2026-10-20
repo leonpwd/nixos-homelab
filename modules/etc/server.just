@@ -13,10 +13,9 @@ generations:
 rollback:
     sudo nixos-rebuild switch --rollback
 
-# Nettoyage manuel : garde les 3 dernières générations + GC
+# Nettoyage manuel : supprime les générations de plus de 14 jours + GC
 gc:
-    sudo systemctl start nixos-cleanup.service
-    journalctl -u nixos-cleanup.service --no-pager -n 50
+    sudo nix-collect-garbage --delete-older-than 14d
 
 # Lancer la mise à jour maintenant (sans attendre le timer du lundi)
 upgrade:
@@ -55,11 +54,11 @@ restart container:
 
 # Arrête tous les containers
 stop-all:
-    sudo systemctl stop podman-compose-nginx-root.target
+    sudo systemctl stop podman-compose-$(hostname)-root.target
 
 # Démarre tous les containers
 start-all:
-    sudo systemctl start podman-compose-nginx-root.target
+    sudo systemctl start podman-compose-$(hostname)-root.target
 
 # ── Infos système ──────────────────────────────────────────────────────────────
 
