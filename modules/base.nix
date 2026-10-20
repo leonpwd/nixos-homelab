@@ -191,9 +191,15 @@
     # Memory & Swap optimization for zram
     "vm.swappiness"                               = 180;  # Aggressive zram swapping (official kernel recommendation)
 
+    # Kernel panic auto-reboot (headless VM resilience)
+    "kernel.panic"                                = 10;   # Auto-reboot after 10s on kernel panic
+    "kernel.panic_on_oops"                        = 1;
+
     # TCP BBR congestion control & Fair Queueing
     "net.core.default_qdisc"                      = "fq";
     "net.ipv4.tcp_congestion_control"             = "bbr";
+    "net.core.rmem_max"                           = 4194304; # 4 MB max receive buffer for high-throughput
+    "net.core.wmem_max"                           = 4194304; # 4 MB max send buffer for high-throughput
 
     # Filesystem protections
     "fs.protected_fifos"                          = 2;    # Prevent FIFO race conditions in world-writable dirs
@@ -218,10 +224,14 @@
     "net.ipv6.conf.default.accept_redirects"      = 0;    # Same for new IPv6 interfaces
   };
 
-  # ── Shared Services (Tailscale, QEMU Guest & Podman) ─────────────────────────
+  # ── Shared Services (Tailscale, QEMU Guest, EarlyOOM & Podman) ─────────────
 
   services.tailscale.enable = true;
   services.qemuGuest.enable = true;
+  services.earlyoom = {
+    enable = true;
+    freeMemThreshold = 5;
+  };
 
   virtualisation.podman = {
     enable       = true;
