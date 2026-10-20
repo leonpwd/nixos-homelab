@@ -4,10 +4,9 @@
 
   system.autoUpgrade = {
     enable             = true;
-    flake              = "path:/etc/nixos#${config.networking.hostName}";
+    flake              = "github:leonpwd/nixos-homelab#${config.networking.hostName}";
     flags              = [
-      "--update-input"
-      "nixpkgs"
+      "--no-write-lock-file"
     ];
     dates              = "Mon 04:00";
     randomizedDelaySec = "30min";
