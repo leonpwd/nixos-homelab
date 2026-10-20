@@ -13,6 +13,7 @@
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.systemd-boot.graceful = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
@@ -166,9 +167,19 @@
     checkReversePath = "loose";
   };
 
+  # Enable container name DNS for all Podman networks
+  networking.firewall.interfaces = let
+    matchAll = if !config.networking.nftables.enable then "podman+" else "podman*";
+  in {
+    "${matchAll}".allowedUDPPorts = [ 53 ];
+  };
+
   # ── Kernel Hardening (sysctl) ──────────────────────────────────────────────────
 
   boot.kernel.sysctl = {
+    # Memory & Swap optimization for zram
+    "vm.swappiness"                               = 180;  # Aggressive zram swapping (official kernel recommendation)
+
     # Filesystem protections
     "fs.protected_fifos"                          = 2;    # Prevent FIFO race conditions in world-writable dirs
     "fs.protected_regular"                        = 2;    # Prevent writes to files owned by others in shared dirs
@@ -201,6 +212,11 @@
     dockerCompat = true;
     dockerSocket.enable = true;
     defaultNetwork.settings.dns_enabled = true;
+    autoPrune = {
+      enable = true;
+      flags  = [ "--all" ];
+      dates  = "weekly";
+    };
   };
 
   systemd.sockets.podman = {

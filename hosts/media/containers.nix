@@ -3,24 +3,6 @@
 { pkgs, lib, config, ... }:
 
 {
-  # ── Runtime & DNS ─────────────────────────────────────────────────────────────
-
-  virtualisation.podman = {
-    enable = true;
-    autoPrune = {
-      enable = true;
-      flags = [ "--all" ];
-    };
-    dockerCompat = true;
-  };
-
-  # Enable container name DNS for all Podman networks
-  networking.firewall.interfaces = let
-    matchAll = if !config.networking.nftables.enable then "podman+" else "podman*";
-  in {
-    "${matchAll}".allowedUDPPorts = [ 53 ];
-  };
-
   # ── Deterministic Host Directory Creation ─────────────────────────────────────
 
   systemd.tmpfiles.rules = [
@@ -287,6 +269,7 @@
     serviceConfig.Restart = lib.mkOverride 90 "always";
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];
+    bindsTo = [ "podman-gluetun.service" ];
   };
 
   # Navidrome — Subsonic-compatible music server.
@@ -428,6 +411,7 @@
     };
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];
+    bindsTo = [ "podman-gluetun.service" ];
   };
 
   # QBittorrent
@@ -459,6 +443,7 @@
     };
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];
+    bindsTo = [ "podman-gluetun.service" ];
   };
 
   # VueTorrent UI Backend
@@ -618,6 +603,7 @@
     requires = [ "podman-network-netARR.service" ];
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];
+    bindsTo = [ "podman-gluetun.service" ];
   };
 
 

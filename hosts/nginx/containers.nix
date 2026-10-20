@@ -1,13 +1,6 @@
 { pkgs, lib, config, ... }:
 
 {
-  # DNS for container-to-container name resolution
-  networking.firewall.interfaces = let
-    matchAll = if !config.networking.nftables.enable then "podman+" else "podman*";
-  in {
-    "${matchAll}".allowedUDPPorts = [ 53 ];
-  };
-
   # Volume directories creation
   systemd.tmpfiles.rules = [
     "d /config/npmplus                   0750 root root -"
