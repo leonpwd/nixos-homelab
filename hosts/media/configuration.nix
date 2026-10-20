@@ -16,8 +16,9 @@
   # ── Proxmox VirtioFS Shared Storage ──────────────────────────────────────────
 
   fileSystems."/media/HDD1" = {
-    device = "HDD1";
-    fsType = "virtiofs";
+    device  = "HDD1";
+    fsType  = "virtiofs";
+    options = [ "nofail" "_netdev" ];
   };
 
   # Firewall rules for Media host (Jellyfin, Sonarr, Radarr, Prowlarr, etc.)

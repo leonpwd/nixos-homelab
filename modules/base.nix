@@ -10,6 +10,7 @@
   ];
 
   zramSwap.enable = true;
+  services.fstrim.enable = true;
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.systemd-boot.graceful = true;
@@ -180,6 +181,10 @@
     # Memory & Swap optimization for zram
     "vm.swappiness"                               = 180;  # Aggressive zram swapping (official kernel recommendation)
 
+    # TCP BBR congestion control & Fair Queueing
+    "net.core.default_qdisc"                      = "fq";
+    "net.ipv4.tcp_congestion_control"             = "bbr";
+
     # Filesystem protections
     "fs.protected_fifos"                          = 2;    # Prevent FIFO race conditions in world-writable dirs
     "fs.protected_regular"                        = 2;    # Prevent writes to files owned by others in shared dirs
@@ -203,9 +208,10 @@
     "net.ipv6.conf.default.accept_redirects"      = 0;    # Same for new IPv6 interfaces
   };
 
-  # ── Shared Services (Tailscale & Podman) ───────────────────────────────────────
+  # ── Shared Services (Tailscale, QEMU Guest & Podman) ─────────────────────────
 
   services.tailscale.enable = true;
+  services.qemuGuest.enable = true;
 
   virtualisation.podman = {
     enable       = true;
