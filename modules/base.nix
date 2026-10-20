@@ -145,9 +145,9 @@
     SystemMaxFileSize=50M
   '';
 
-  systemd.extraConfig = ''
-    DefaultTimeoutStopSec=20s
-  '';
+  systemd.settings.Manager = {
+    DefaultTimeoutStopSec = "20s";
+  };
 
   # ── Console Proxmox & Auto-Login TTY1 (Nginx Proxy Host) ──────────────────────
 
