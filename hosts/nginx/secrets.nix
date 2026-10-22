@@ -46,7 +46,7 @@
         (builtins.readFile ../../crowdsec/npmplus-crowdsec.conf);
       owner = "root";
       group = "root";
-      mode  = "0644";
+      mode  = "0400";
     };
   };
 }

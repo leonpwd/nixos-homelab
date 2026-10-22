@@ -31,7 +31,14 @@
       User = "root";
     };
     script = ''
-      podman auto-update
+      for attempt in 1 2 3; do
+        if podman auto-update; then
+          exit 0
+        fi
+        echo "podman auto-update failed (attempt $attempt/3), retrying in 30s..."
+        sleep 30
+      done
+      exit 1
     '';
   };
 

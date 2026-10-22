@@ -56,7 +56,7 @@
         auth = "apikey"
         apikey = "${config.sops.placeholder."media/gsp_api_key"}"
       '';
-      mode = "0644";
+      mode = "0400";
     };
 
     templates."explo.env" = {

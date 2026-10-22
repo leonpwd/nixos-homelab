@@ -239,7 +239,7 @@
     preStart = ''
       mkdir -p /config/npmplus/crowdsec
       cp -f ${config.sops.templates."npmplus-crowdsec.conf".path} /config/npmplus/crowdsec/crowdsec.conf
-      chmod 644 /config/npmplus/crowdsec/crowdsec.conf
+      chmod 600 /config/npmplus/crowdsec/crowdsec.conf
 
       mkdir -p /config/npmplus/custom_nginx
       # Combine GeoIP map + custom log_format (both need http {} context)

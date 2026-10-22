@@ -18,7 +18,7 @@
   fileSystems."/media/HDD1" = {
     device  = "HDD1";
     fsType  = "virtiofs";
-    options = [ "nofail" "_netdev" ];
+    options = [ "nofail" "_netdev" "nosuid" "nodev" ];
   };
 
   # Firewall rules for Media host (Jellyfin, Sonarr, Radarr, Prowlarr, etc.)
