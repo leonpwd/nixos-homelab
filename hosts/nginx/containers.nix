@@ -60,7 +60,12 @@
       "/config/arcane-data:/app/data:rw"
     ];
     ports = [
-      "3552:3552/tcp"
+      # Lié à l'IP Tailscale uniquement : pas de règle de firewall nixos pour
+      # ce port car podman publie les ports hors de networking.firewall
+      # (contourne l'INPUT chain). Le binding sur une IP précise est donc le
+      # seul moyen de restreindre l'accès (sinon 0.0.0.0 = aussi joignable
+      # depuis le LAN).
+      "100.107.36.94:3552:3552/tcp"
     ];
     dependsOn = [
       "docker-proxy"
@@ -78,9 +83,13 @@
     };
     after = [
       "podman-network-netPROXY.service"
+      "tailscaled.service"
     ];
     requires = [
       "podman-network-netPROXY.service"
+    ];
+    wants = [
+      "tailscaled.service"
     ];
     partOf = [
       "podman-compose-nginx-root.target"
