@@ -589,6 +589,7 @@
     };
     volumes = [
       "/config/hydra-qbit:/config:rw"
+      "${config.sops.templates."hydra_default.toml".path}:/config/default.toml:ro"
       "/media/HDD1:/HDD1:rw"
     ];
     dependsOn = [ "gluetun" ];
