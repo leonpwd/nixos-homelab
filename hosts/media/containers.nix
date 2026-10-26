@@ -589,7 +589,6 @@
     };
     volumes = [
       "/config/hydra-qbit:/config:rw"
-      "${config.sops.templates."hydra_default.toml".path}:/config/default.toml:ro"
       "/media/HDD1:/HDD1:rw"
     ];
     dependsOn = [ "gluetun" ];
@@ -601,6 +600,14 @@
     ];
   };
   systemd.services."podman-hydra" = {
+    preStart = ''
+      mkdir -p /config/hydra-qbit
+      if [ ! -f /config/hydra-qbit/default.toml ]; then
+        cp -f ${./etc/hydra-default.toml} /config/hydra-qbit/default.toml
+        chown 1000:1000 /config/hydra-qbit/default.toml
+        chmod 600 /config/hydra-qbit/default.toml
+      fi
+    '';
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
       TimeoutStopSec = lib.mkOverride 90 170;

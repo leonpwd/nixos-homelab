@@ -53,9 +53,6 @@ music:
     slskd_web_password: "${SLSKD_WEB_PASSWORD:-}"
     soulseek_username: "${SOULSEEK_USERNAME:-}"
     soulseek_password: "${SOULSEEK_PASSWORD:-}"
-hydra:
-    api_key: "${HYDRA_API_KEY:-}"
-    password_hash: "${HYDRA_PASSWORD_HASH:-}"
 EOF
 fi
 
