@@ -578,11 +578,14 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Hydra — High performance seedbox / qBittorrent companion (routed through Gluetun)
+  # Hydra (Hydranos) — High performance seedbox / qBittorrent companion (routed through Gluetun)
+  # Migré depuis ghcr.io/kheopsian/hydra:latest (image gelée/dépréciée par l'auteur, 2026-10-26).
   virtualisation.oci-containers.containers."hydra" = {
-    image = "ghcr.io/kheopsian/hydra:latest";
+    image = "ghcr.io/kheopsian/hydranos:latest";
     environment = {
       "TZ" = "Europe/Paris";
+      "PUID" = "1000";
+      "PGID" = "1000";
     };
     volumes = [
       "/config/hydra-qbit:/config:rw"
@@ -593,11 +596,13 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--network=container:gluetun"
+      "--stop-timeout=150"
     ];
   };
   systemd.services."podman-hydra" = {
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
+      TimeoutStopSec = lib.mkOverride 90 170;
     };
     after = [ "podman-network-netARR.service" ];
     requires = [ "podman-network-netARR.service" ];
