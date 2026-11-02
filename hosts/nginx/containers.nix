@@ -14,7 +14,6 @@
     "d /config/npmplus/custom_nginx      0750 root root -"
 
     # The acquisition and whitelist files themselves are installed by podman-crowdsec's preStart
-    # (tmpfiles "C+" never overwrites an existing file, so later edits would not reach CrowdSec).
     "d /config/crowdsec/conf/parsers/s02-enrich - - - -"
     "d /config/crowdsec/conf/postoverflows/s01-whitelist - - - -"
   ];
