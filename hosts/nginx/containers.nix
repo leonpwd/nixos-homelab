@@ -77,6 +77,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=arcane"
       "--network=netMGMT"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-arcane" = {
@@ -129,6 +130,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=crowdsec"
       "--network=netPROXY"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-crowdsec" = {
@@ -252,6 +254,7 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--network=host"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-npmplus" = {
@@ -294,6 +297,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=geoipupdate"
       "--network=netPROXY"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-npmplus-geoipupdate" = {

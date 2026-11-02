@@ -60,6 +60,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=arcane-agent"
       "--network=netMGMT"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-arcane-agent" = {
@@ -93,6 +94,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=cross-seed"
       "--network=netARR"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-cross-seed" = {
@@ -220,6 +222,7 @@
       "--device=/dev/net/tun:/dev/net/tun:rwm"
       "--network-alias=gluetun"
       "--network=netARR"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-gluetun" = {
@@ -263,6 +266,7 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--network=container:gluetun"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-slskd" = {
@@ -292,6 +296,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=navidrome"
       "--network=netARR"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-navidrome" = {
@@ -319,6 +324,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=explo"
       "--network=netARR"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-explo" = {
@@ -357,6 +363,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=beets"
       "--network=netARR"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-beets" = {
@@ -403,6 +410,7 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--network=container:gluetun"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-prowlarr" = {
@@ -435,6 +443,7 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--network=container:gluetun"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-qbit" = {
@@ -470,6 +479,7 @@
       "--dns=8.8.8.8"
       "--network-alias=vuetorrent-backend"
       "--network=netARR"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-qbit-ui-backend" = {
@@ -503,6 +513,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=radarr"
       "--network=netARR"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-radarr" = {
@@ -536,6 +547,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=sonarr"
       "--network=netARR"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-sonarr" = {
@@ -566,6 +578,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network-alias=seerr"
       "--network=netARR"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-seerr" = {
@@ -597,6 +610,7 @@
       "--label=io.containers.autoupdate=registry"
       "--network=container:gluetun"
       "--stop-timeout=150"
+      "--security-opt=no-new-privileges:true"
     ];
   };
   systemd.services."podman-hydra" = {
