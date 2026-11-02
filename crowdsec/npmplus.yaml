@@ -1,5 +1,5 @@
 filenames:
-  - /config/npmplus/nginx/*.log
+  - /opt/npmplus/nginx/logs/*.log
 labels:
   type: npmplus
 ---

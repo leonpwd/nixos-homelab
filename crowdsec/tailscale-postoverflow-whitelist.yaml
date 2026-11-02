@@ -1,0 +1,7 @@
+name: local/tailscale-postoverflow-whitelist
+description: "Never create decisions for Tailscale addresses (covers AppSec alerts too)"
+whitelist:
+  reason: "Tailscale network (CGNAT range and ULA)"
+  cidr:
+    - "100.64.0.0/10"
+    - "fd7a:115c:a1e0::/48"

@@ -15,6 +15,12 @@
 
     # Copy npmplus.yaml from root crowdsec folder to acquis.d
     "C+ /config/crowdsec/conf/acquis.d/npmplus.yaml 0644 root root - ${../../crowdsec/npmplus.yaml}"
+
+    # Never ban Tailscale addresses (not covered by CrowdSec's default private-range whitelist)
+    "d /config/crowdsec/conf/parsers/s02-enrich - - - -"
+    "d /config/crowdsec/conf/postoverflows/s01-whitelist - - - -"
+    "C+ /config/crowdsec/conf/parsers/s02-enrich/tailscale-whitelist.yaml 0644 root root - ${../../crowdsec/tailscale-whitelist.yaml}"
+    "C+ /config/crowdsec/conf/postoverflows/s01-whitelist/tailscale-whitelist.yaml 0644 root root - ${../../crowdsec/tailscale-postoverflow-whitelist.yaml}"
   ];
   
   # Auto-registration service for CrowdSec bouncer
@@ -74,7 +80,7 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--network-alias=arcane"
-      "--network=netPROXY"
+      "--network=netMGMT"
     ];
   };
   systemd.services."podman-arcane" = {
@@ -82,11 +88,11 @@
       Restart = lib.mkOverride 90 "always";
     };
     after = [
-      "podman-network-netPROXY.service"
+      "podman-network-netMGMT.service"
       "tailscaled.service"
     ];
     requires = [
-      "podman-network-netPROXY.service"
+      "podman-network-netMGMT.service"
     ];
     wants = [
       "tailscaled.service"
@@ -96,7 +102,7 @@
     ];
     upheldBy = [
       "podman-docker-proxy.service"
-      "podman-network-netPROXY.service"
+      "podman-network-netMGMT.service"
     ];
     wantedBy = [
       "podman-compose-nginx-root.target"
@@ -186,7 +192,7 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--network-alias=docker-proxy"
-      "--network=netPROXY"
+      "--network=netMGMT"
       "--security-opt=no-new-privileges:true"
     ];
   };
@@ -206,18 +212,18 @@
       Restart = lib.mkOverride 90 "always";
     };
     after = [
-      "podman-network-netPROXY.service"
+      "podman-network-netMGMT.service"
       "podman.service"
     ];
     requires = [
-      "podman-network-netPROXY.service"
+      "podman-network-netMGMT.service"
       "podman.service"
     ];
     partOf = [
       "podman-compose-nginx-root.target"
     ];
     upheldBy = [
-      "podman-network-netPROXY.service"
+      "podman-network-netMGMT.service"
     ];
     wantedBy = [
       "podman-compose-nginx-root.target"
@@ -317,6 +323,22 @@
     };
     script = ''
       podman network inspect netPROXY || podman network create netPROXY --driver=bridge
+    '';
+    partOf = [ "podman-compose-nginx-root.target" ];
+    wantedBy = [ "podman-compose-nginx-root.target" ];
+  };
+
+  # Management network: only arcane and docker-proxy. docker-proxy exposes the Podman API
+  # (POST/EXEC enabled), so no other container may share a network with it.
+  systemd.services."podman-network-netMGMT" = {
+    path = [ pkgs.podman ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStop = "podman network rm -f netMGMT";
+    };
+    script = ''
+      podman network inspect netMGMT || podman network create netMGMT --driver=bridge
     '';
     partOf = [ "podman-compose-nginx-root.target" ];
     wantedBy = [ "podman-compose-nginx-root.target" ];

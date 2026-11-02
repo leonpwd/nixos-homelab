@@ -23,13 +23,15 @@
   boot.kernel.sysctl."net.ipv4.conf.all.rp_filter" = 1;
 
   # Specific firewall rules for Proxy host (WAN/LAN HTTP/HTTPS ports)
+  # Port 81 (NPMplus admin UI) is only reachable over Tailscale. npmplus runs with --network=host,
+  # so these rules do apply to it (unlike ports published by Podman).
   networking.firewall.interfaces = {
     ens18 = {
-      allowedTCPPorts = [ 22 80 443 81 ];
+      allowedTCPPorts = [ 22 80 443 ];
       allowedUDPPorts = [ 80 443 ];
     };
     tailscale0 = {
-      allowedTCPPorts = [ 22 ];
+      allowedTCPPorts = [ 22 81 ];
     };
   };
   

@@ -59,15 +59,15 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--network-alias=arcane-agent"
-      "--network=netARR"
+      "--network=netMGMT"
     ];
   };
   systemd.services."podman-arcane-agent" = {
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };
-    after = [ "podman-network-netARR.service" ];
-    requires = [ "podman-network-netARR.service" ];
+    after = [ "podman-network-netMGMT.service" ];
+    requires = [ "podman-network-netMGMT.service" ];
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];
   };
@@ -147,7 +147,7 @@
     extraOptions = [
       "--label=io.containers.autoupdate=registry"
       "--network-alias=docker-proxy"
-      "--network=netARR"
+      "--network=netMGMT"
       "--security-opt=no-new-privileges:true"
     ];
   };
@@ -166,8 +166,8 @@
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };
-    after = [ "podman-network-netARR.service" "podman.service" ];
-    requires = [ "podman-network-netARR.service" "podman.service" ];
+    after = [ "podman-network-netMGMT.service" "podman.service" ];
+    requires = [ "podman-network-netMGMT.service" "podman.service" ];
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];
   };
@@ -199,11 +199,11 @@
       "${config.sops.templates."gluetun_config.toml".path}:/home/arr/config.toml:ro"
       "${config.sops.templates."wireguard_private_key".path}:/run/secrets/wireguard_private_key:ro"
     ];
+    # Podman publishes ports outside networking.firewall (nat PREROUTING bypasses the INPUT chain),
+    # so every entry below is reachable on all interfaces regardless of the allowed port lists.
+    # 6881 and 8191 were removed: nothing listens on them inside gluetun's network namespace.
     ports = [
-      "6881:6881/tcp"
-      "6881:6881/udp"
       "8080:8080/tcp"
-      "8191:8191/tcp"
       "8199:8199/tcp"
       "9696:9696/tcp"
       "16171:16171/tcp"
@@ -630,6 +630,22 @@
     };
     script = ''
       podman network inspect netARR || podman network create netARR --driver=bridge
+    '';
+    partOf = [ "podman-compose-media-root.target" ];
+    wantedBy = [ "podman-compose-media-root.target" ];
+  };
+
+  # Management network: only arcane-agent and docker-proxy. docker-proxy exposes the Podman API
+  # (POST/EXEC enabled), so no other container may share a network with it.
+  systemd.services."podman-network-netMGMT" = {
+    path = [ pkgs.podman ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStop = "podman network rm -f netMGMT";
+    };
+    script = ''
+      podman network inspect netMGMT || podman network create netMGMT --driver=bridge
     '';
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];
