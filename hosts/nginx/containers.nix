@@ -13,14 +13,10 @@
     "d /config/crowdsec/data             0750 root root -"
     "d /config/npmplus/custom_nginx      0750 root root -"
 
-    # Copy npmplus.yaml from root crowdsec folder to acquis.d
-    "C+ /config/crowdsec/conf/acquis.d/npmplus.yaml 0644 root root - ${../../crowdsec/npmplus.yaml}"
-
-    # Never ban Tailscale addresses (not covered by CrowdSec's default private-range whitelist)
+    # The acquisition and whitelist files themselves are installed by podman-crowdsec's preStart
+    # (tmpfiles "C+" never overwrites an existing file, so later edits would not reach CrowdSec).
     "d /config/crowdsec/conf/parsers/s02-enrich - - - -"
     "d /config/crowdsec/conf/postoverflows/s01-whitelist - - - -"
-    "C+ /config/crowdsec/conf/parsers/s02-enrich/tailscale-whitelist.yaml 0644 root root - ${../../crowdsec/tailscale-whitelist.yaml}"
-    "C+ /config/crowdsec/conf/postoverflows/s01-whitelist/tailscale-whitelist.yaml 0644 root root - ${../../crowdsec/tailscale-postoverflow-whitelist.yaml}"
   ];
   
   # Auto-registration service for CrowdSec bouncer
@@ -136,6 +132,14 @@
     ];
   };
   systemd.services."podman-crowdsec" = {
+    # Refresh CrowdSec's log acquisition (npmplus access logs) and the Tailscale whitelist at every
+    # start. Changing these files changes this script, so the unit is restarted on deployment.
+    # The whitelist keeps Tailscale addresses (not in CrowdSec's default private ranges) from being banned.
+    preStart = ''
+      install -D -m 0644 ${../../crowdsec/npmplus.yaml} /config/crowdsec/conf/acquis.d/npmplus.yaml
+      install -D -m 0644 ${../../crowdsec/tailscale-whitelist.yaml} /config/crowdsec/conf/parsers/s02-enrich/tailscale-whitelist.yaml
+      install -D -m 0644 ${../../crowdsec/tailscale-postoverflow-whitelist.yaml} /config/crowdsec/conf/postoverflows/s01-whitelist/tailscale-whitelist.yaml
+    '';
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };
