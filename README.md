@@ -55,7 +55,7 @@ Declarative, multi-host NixOS infrastructure featuring an edge Reverse Proxy & W
 ├── modules/                     # Shared NixOS modules across all hosts
 │   ├── base.nix                 # Core OS, Zsh, SSH, Tailscale, Podman, and sudo
 │   ├── services.nix             # Automatic upgrades, cleanup timers, and container updates
-│   └── etc/                     # Shared terminal assets (Fastfetch, Powerlevel10k, Justfile)
+│   └── etc/                     # Shared terminal assets (Fastfetch, Starship, Justfile)
 │
 ├── hosts/                       # Per-host specific configurations
 │   ├── nginx/                   # Proxy host configuration
