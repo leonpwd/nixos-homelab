@@ -52,7 +52,8 @@
     shell        = pkgs.zsh;
     hashedPassword = "!";
     openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILw0xxAKSAbc5PMZncFMBUF7aNxqJAXRaClQgtLq+KOG lego@server"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKTaIJwfMzeyqnMvwonVwqX77OXzqUrlumj8Fl0AOfCX git.staleness589@passmail.com" # Léon
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEsR+Vr5t1fxFlTBNi9eoGIYBkG7uhP/Kg63Z901eKat nathaniel@XPS" # Hugo
     ];
   };
 
