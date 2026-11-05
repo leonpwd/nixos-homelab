@@ -1,6 +1,7 @@
-{ config, ... }:
+{ config, pkgs, inputs, ... }:
 {
   sops = {
+    package           = inputs.sops-nix.packages.${pkgs.stdenv.hostPlatform.system}.sops-install-secrets;
     defaultSopsFile   = ../../secrets/nginx.yaml;
     defaultSopsFormat = "yaml";
     age.sshKeyPaths   = [ "/etc/ssh/ssh_host_ed25519_key" ];
