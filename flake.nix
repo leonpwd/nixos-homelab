@@ -30,7 +30,7 @@
 
         defaults = { ... }: {
           deployment = {
-            targetUser = "lego";
+            targetUser = "leon";
             buildOnTarget = true;
           };
         };

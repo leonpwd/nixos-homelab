@@ -46,13 +46,35 @@
 
   users.mutableUsers = false;
 
-  users.users.lego = {
+  # leon and hugo share one $HOME (/home/lego — kept as-is, not moved, to
+  # avoid relocating existing data) and one login config. uid pinned to 1000
+  # to match existing file ownership (tmpfiles rules, container volumes
+  # already chowned 1000:1000) that predates this rename from "lego".
+  users.users.leon = {
     isNormalUser = true;
+    uid          = 1000;
+    home         = "/home/lego";
+    extraGroups  = [ "wheel" "podman" ];
+    shell        = pkgs.zsh;
+    hashedPassword = "!";
+    homeMode     = "770"; # group "users" (both leon and hugo) gets access
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKTaIJwfMzeyqnMvwonVwqX77OXzqUrlumj8Fl0AOfCX git.staleness589@passmail.com" # Léon
+    ];
+  };
+
+  # Separate login so sudo/auth logs attribute to the right person, not just
+  # the SSH key used to connect. Shares leon's $HOME and shell config on
+  # purpose — same rights too: Hugo already has unrestricted sudo either
+  # way, this is for accountability, not an access boundary.
+  users.users.hugo = {
+    isNormalUser = true;
+    home         = "/home/lego";
+    createHome   = false;
     extraGroups  = [ "wheel" "podman" ];
     shell        = pkgs.zsh;
     hashedPassword = "!";
     openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKTaIJwfMzeyqnMvwonVwqX77OXzqUrlumj8Fl0AOfCX git.staleness589@passmail.com" # Léon
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEsR+Vr5t1fxFlTBNi9eoGIYBkG7uhP/Kg63Z901eKat nathaniel@XPS" # Hugo
     ];
   };
@@ -63,9 +85,12 @@
 
   environment.shells = [ pkgs.zsh ];
 
-  system.activationScripts.legoZshrc = lib.stringAfter [ "users" ] ''
+  # Shared $HOME needs exactly one .zshrc stub (skips zsh's first-run
+  # wizard); the rest of the shell experience (completion, p10k, fastfetch)
+  # is system-wide below, so leon and hugo get it identically for free.
+  system.activationScripts.sharedZshrc = lib.stringAfter [ "users" ] ''
     if [ ! -f /home/lego/.zshrc ]; then
-      install -o lego -g users -m 644 /dev/null /home/lego/.zshrc
+      install -o leon -g users -m 644 /dev/null /home/lego/.zshrc
     fi
   '';
 
@@ -129,7 +154,7 @@
   services.openssh = {
     enable = true;
     settings = {
-      AllowUsers                  = [ "lego" ];
+      AllowUsers                  = [ "leon" "hugo" ];
       AuthenticationMethods       = "publickey";
       PasswordAuthentication      = false;
       KbdInteractiveAuthentication = false;
@@ -167,7 +192,7 @@
   # ── Console Proxmox & Auto-Login TTY1 (Nginx Proxy Host) ──────────────────────
 
   services.getty = {
-    autologinUser = "lego";
+    autologinUser = "leon";
     helpLine = lib.mkForce "";
     greetingLine = lib.mkForce "";
   };
