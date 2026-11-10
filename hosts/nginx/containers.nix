@@ -1,7 +1,6 @@
 { pkgs, lib, config, ... }:
 
 {
-  # Volume directories creation
   systemd.tmpfiles.rules = [
     "d /config/npmplus                   0750 root root -"
     "d /config/npmplus/nginx             0750 root root -"
@@ -13,12 +12,10 @@
     "d /config/crowdsec/data             0750 root root -"
     "d /config/npmplus/custom_nginx      0750 root root -"
 
-    # The acquisition and whitelist files themselves are installed by podman-crowdsec's preStart
     "d /config/crowdsec/conf/parsers/s02-enrich - - - -"
     "d /config/crowdsec/conf/postoverflows/s01-whitelist - - - -"
   ];
   
-  # Auto-registration service for CrowdSec bouncer
   systemd.services."register-crowdsec-bouncer" = {
     description = "Register bouncer API key in CrowdSec";
     after = [ "podman-crowdsec.service" "sops-nix.service" ];
@@ -61,11 +58,6 @@
       "/config/arcane-data:/app/data:rw"
     ];
     ports = [
-      # Lié à l'IP Tailscale uniquement : pas de règle de firewall nixos pour
-      # ce port car podman publie les ports hors de networking.firewall
-      # (contourne l'INPUT chain). Le binding sur une IP précise est donc le
-      # seul moyen de restreindre l'accès (sinon 0.0.0.0 = aussi joignable
-      # depuis le LAN).
       "100.107.36.94:3552:3552/tcp"
     ];
     dependsOn = [
@@ -133,9 +125,6 @@
     ];
   };
   systemd.services."podman-crowdsec" = {
-    # Refresh CrowdSec's log acquisition (npmplus access logs) and the Tailscale whitelist at every
-    # start. Changing these files changes this script, so the unit is restarted on deployment.
-    # The whitelist keeps Tailscale addresses (not in CrowdSec's default private ranges) from being banned.
     preStart = ''
       install -D -m 0644 ${../../crowdsec/npmplus.yaml} /config/crowdsec/conf/acquis.d/npmplus.yaml
       install -D -m 0644 ${../../crowdsec/tailscale-whitelist.yaml} /config/crowdsec/conf/parsers/s02-enrich/tailscale-whitelist.yaml
@@ -263,7 +252,6 @@
       chmod 600 /config/npmplus/crowdsec/crowdsec.conf
 
       mkdir -p /config/npmplus/custom_nginx
-      # Combine GeoIP map + custom log_format (both need http {} context)
       cat ${../../crowdsec/geoip_map.conf} ${./etc/nginx_log_format.conf} > /config/npmplus/custom_nginx/http.conf
       cp -f ${../../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/server_proxy.conf
       cp -f ${../../crowdsec/geoip_block.conf} /config/npmplus/custom_nginx/location_proxy.conf
@@ -320,7 +308,6 @@
     ];
   };
 
-  # Networks
   systemd.services."podman-network-netPROXY" = {
     path = [ pkgs.podman ];
     serviceConfig = {
@@ -335,8 +322,6 @@
     wantedBy = [ "podman-compose-nginx-root.target" ];
   };
 
-  # Management network: only arcane and docker-proxy. docker-proxy exposes the Podman API
-  # (POST/EXEC enabled), so no other container may share a network with it.
   systemd.services."podman-network-netMGMT" = {
     path = [ pkgs.podman ];
     serviceConfig = {
@@ -351,7 +336,6 @@
     wantedBy = [ "podman-compose-nginx-root.target" ];
   };
 
-  # Root service target
   systemd.targets."podman-compose-nginx-root" = {
     unitConfig = {
       Description = "Root target for Proxy containers.";

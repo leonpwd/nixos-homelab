@@ -19,7 +19,6 @@
   };
 
   # ── Podman Container Auto-Update — Daily at 04:00 AM ───────────────────────────
-  # Updates containers tagged io.containers.autoupdate=registry.
 
   systemd.services.podman-auto-update = {
     description = "Auto-update Podman containers";

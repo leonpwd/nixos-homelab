@@ -21,7 +21,6 @@
     options = [ "nofail" "_netdev" "nosuid" "nodev" ];
   };
 
-  # Firewall rules for Media host (Jellyfin, Sonarr, Radarr, Prowlarr, etc.)
   networking.firewall.interfaces = {
     ens18 = {
       allowedTCPPorts = [ 22 2468 3553 4533 5030 5055 7288 8081 8199 8337 8989 7878 9696 16171 16172 ];

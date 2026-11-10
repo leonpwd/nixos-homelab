@@ -1,26 +1,5 @@
 # Powerlevel10k Rainbow style for Starship, made with configure.html from p10k-starship.
 # Needs Starship 1.26 or newer and a Nerd Font.
-#
-# Answers:
-#   Prompt Style              Rainbow
-#   Prompt Colors             256 colors
-#   Show current time?        24-hour format
-#   Prompt Separators         Angled
-#   Prompt Heads              Blurred
-#   Prompt Tails              Blurred
-#   Prompt Height             Two lines
-#   Prompt Connection         Solid
-#   Prompt Frame              Left
-#   Connection & Frame Color  Darkest
-#   Prompt Spacing            Sparse
-#   Icons                     Many icons
-#   Icon Set                  Nerd Font
-#   Icon Padding              None
-#   Prompt Flow               Fluent
-#   Enable Transient Prompt?  No
-#
-# To change them, open configure.html, click "Load settings from a file" and pick this
-# file. It reads them from the next line.
 # p10k-starship: style=rainbow&colors=256&time=24h&separators=angled&heads=blurred&tails=blurred&lines=2&connection=solid&frame=left&color=4&spacing=sparse&icons=many&symbols=nerd&padding=none&flow=fluent&transient=no
 
 "$schema" = 'https://starship.rs/config-schema.json'
@@ -28,9 +7,6 @@
 add_newline = true
 palette = 'p10k'
 
-# Line 1: left segments, the connection and right segments. Line 2: where you type.
-# $env_var and ${custom} show your own env_var and custom modules; give them a format in
-# the same style.
 format = """
 [╭─](fg:frame)\
 [░▒▓](fg:os)\

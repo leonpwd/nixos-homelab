@@ -1,4 +1,3 @@
-# Media & *Arr Stack Containers — Managed via Podman and SOPS-nix secrets
 
 { pkgs, lib, config, ... }:
 
@@ -28,7 +27,6 @@
     "d /media/HDD1/media/Music/Inbox     0775 1000 1000 -"
     "d /media/HDD1/media/Music/Inbox/complete   0775 1000 1000 -"
     "d /media/HDD1/media/Music/Inbox/incomplete 0775 1000 1000 -"
-    # Never index partially downloaded audio; completed tracks stay visible to Explo.
     "f /media/HDD1/media/Music/Inbox/incomplete/.ndignore 0644 1000 1000 -"
   ];
 
@@ -36,7 +34,6 @@
 
   # ── Containers Definitions ───────────────────────────────────────────────────
 
-  # Arcane Agent
   virtualisation.oci-containers.containers."arcane-agent" = {
     image = "ghcr.io/getarcaneapp/agent:latest";
     environment = {
@@ -73,7 +70,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Cross-Seed
   virtualisation.oci-containers.containers."cross-seed" = {
     image = "ghcr.io/cross-seed/cross-seed:latest";
     environment = {
@@ -113,7 +109,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Docker Socket Proxy
   virtualisation.oci-containers.containers."docker-proxy" = {
     image = "docker.io/tecnativa/docker-socket-proxy:latest";
     environment = {
@@ -174,7 +169,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Gluetun VPN (ProtonVPN)
   virtualisation.oci-containers.containers."gluetun" = {
     image = "ghcr.io/qdm12/gluetun:latest";
     environment = {
@@ -201,9 +195,6 @@
       "${config.sops.templates."gluetun_config.toml".path}:/home/arr/config.toml:ro"
       "${config.sops.templates."wireguard_private_key".path}:/run/secrets/wireguard_private_key:ro"
     ];
-    # Podman publishes ports outside networking.firewall (nat PREROUTING bypasses the INPUT chain),
-    # so every entry below is reachable on all interfaces regardless of the allowed port lists.
-    # 6881 and 8191 were removed: nothing listens on them inside gluetun's network namespace.
     ports = [
       "8080:8080/tcp"
       "8199:8199/tcp"
@@ -235,8 +226,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # slskd — Soulseek client. Sharing Gluetun's network namespace guarantees
-  # that all Soulseek traffic exits through the VPN.
   virtualisation.oci-containers.containers."slskd" = {
     image = "docker.io/slskd/slskd:latest";
     environment = {
@@ -247,8 +236,6 @@
       "SLSKD_SHARED_DIR" = "/music";
       "SLSKD_SLSK_LISTEN_PORT" = "50300";
       "SLSKD_UMASK" = "002";
-      # Reserve Gluetun's forwarded port for the existing torrent clients.
-      # Routing and the kill switch are still provided by container:gluetun.
       "SLSKD_VPN" = "false";
       "SLSKD_VPN_PORT_FORWARDING" = "false";
       "SLSKD_VPN_GLUETUN_URL" = "http://127.0.0.1:8000";
@@ -276,7 +263,6 @@
     bindsTo = [ "podman-gluetun.service" ];
   };
 
-  # Navidrome — Subsonic-compatible music server.
   virtualisation.oci-containers.containers."navidrome" = {
     image = "docker.io/deluan/navidrome:latest";
     environment = {
@@ -307,13 +293,11 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Explo — creates Navidrome playlists and controls slskd downloads.
   virtualisation.oci-containers.containers."explo" = {
     image = "ghcr.io/lumepart/explo:latest";
     volumes = [
       "/config/explo/.env:/opt/explo/.env:rw"
       "/config/explo:/opt/explo/config:rw"
-      # Beets owns file moves/tagging. Explo only controls downloads through the API.
       "/media/HDD1/media/Music:/data:ro"
       "/media/HDD1/media/Music/Inbox/complete:/slskd:ro"
     ];
@@ -328,8 +312,6 @@
     ];
   };
   systemd.services."podman-explo" = {
-    # The wizard writes schedules and playlist settings to .env. Seed the
-    # persistent copy from SOPS once, then let Explo manage it afterwards.
     preStart = ''
       install -d -m 0750 -o 1000 -g 1000 /config/explo
       if [ ! -s /config/explo/.env ]; then
@@ -343,8 +325,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Beets — tags new tracks from Music/Inbox with MusicBrainz metadata and
-  # moves them into the canonical Artist/Album/Track structure.
   virtualisation.oci-containers.containers."beets" = {
     image = "lscr.io/linuxserver/beets:latest";
     environment = {
@@ -380,7 +360,6 @@
     requires = [ "podman-beets.service" ];
     serviceConfig = {
       Type = "oneshot";
-      # Same mount for source and destination, explicit config and non-root UID.
       ExecStart = "${pkgs.podman}/bin/podman exec --user 1000:1000 beets beet -c /config/config.yaml import -q /music/Inbox/complete";
     };
   };
@@ -394,7 +373,6 @@
     };
   };
 
-  # Prowlarr
   virtualisation.oci-containers.containers."prowlarr" = {
     image = "lscr.io/linuxserver/prowlarr:latest";
     environment = {
@@ -422,7 +400,6 @@
     bindsTo = [ "podman-gluetun.service" ];
   };
 
-  # QBittorrent
   virtualisation.oci-containers.containers."qbit" = {
     image = "lscr.io/linuxserver/qbittorrent:latest";
     environment = {
@@ -455,7 +432,6 @@
     bindsTo = [ "podman-gluetun.service" ];
   };
 
-  # VueTorrent UI Backend
   virtualisation.oci-containers.containers."qbit-ui-backend" = {
     image = "ghcr.io/vuetorrent/vuetorrent-backend:latest";
     environment = {
@@ -492,7 +468,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Radarr
   virtualisation.oci-containers.containers."radarr" = {
     image = "lscr.io/linuxserver/radarr:latest";
     environment = {
@@ -526,7 +501,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Sonarr
   virtualisation.oci-containers.containers."sonarr" = {
     image = "lscr.io/linuxserver/sonarr:latest";
     environment = {
@@ -560,7 +534,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Seerr (Jellyseerr)
   virtualisation.oci-containers.containers."seerr" = {
     image = "ghcr.io/seerr-team/seerr:latest";
     environment = {
@@ -591,8 +564,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Hydra (Hydranos) — High performance seedbox / qBittorrent companion (routed through Gluetun)
-  # Migré depuis ghcr.io/kheopsian/hydra:latest (image gelée/dépréciée par l'auteur, 2026-10-26).
   virtualisation.oci-containers.containers."hydra" = {
     image = "ghcr.io/kheopsian/hydranos:latest";
     environment = {
@@ -634,7 +605,6 @@
   };
 
 
-  # Networks
   systemd.services."podman-network-netARR" = {
     path = [ pkgs.podman ];
     serviceConfig = {
@@ -649,8 +619,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Management network: only arcane-agent and docker-proxy. docker-proxy exposes the Podman API
-  # (POST/EXEC enabled), so no other container may share a network with it.
   systemd.services."podman-network-netMGMT" = {
     path = [ pkgs.podman ];
     serviceConfig = {
@@ -665,7 +633,6 @@
     wantedBy = [ "podman-compose-media-root.target" ];
   };
 
-  # Root service target
   systemd.targets."podman-compose-media-root" = {
     unitConfig = {
       Description = "Root target for Media (*Arr) containers.";

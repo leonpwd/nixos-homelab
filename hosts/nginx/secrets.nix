@@ -35,7 +35,6 @@
       GEOIPUPDATE_LICENSE_KEY=${config.sops.placeholder."geoip/license_key"}
     '';
 
-    # Dynamic template for Nginx CrowdSec bouncer configuration
     templates."npmplus-crowdsec.conf" = {
       content = builtins.replaceStrings
         [ "_BOUNCER_API_KEY_" "_TURNSTILE_SECRET_KEY_" "_TURNSTILE_SITE_KEY_" ]

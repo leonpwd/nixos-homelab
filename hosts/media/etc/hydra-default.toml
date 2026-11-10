@@ -1,12 +1,3 @@
-# Hydra Torrent Daemon - Configuration
-#
-# Copié une seule fois vers /config/hydra-qbit/default.toml au premier
-# démarrage (voir preStart de podman-hydra) : Hydranos réécrit ce fichier
-# lui-même en fonctionnement normal (UI, API), donc Nix ne l'écrase pas
-# à chaque déploiement. api_key et password_hash ci-dessous sont des
-# placeholders — remplacés à la main sur l'hôte après la première copie
-# (régénérables : bouton ↻ de l'UI pour l'api_key, `hydra hash-password
-# <password>` pour le hash).
 
 [daemon]
 agent_token = ""
@@ -57,10 +48,6 @@ max_dials_per_sec = 0.0
 announce_rate_limit = 0.0
 enable_ipv6 = false
 listen_port = 16172
-# bind_interface DOIT rester vide en mode [network] mode = "gluetun" : le
-# renseigner (ex: "tun0") fait passer le kill switch d'Hydranos 4.4 en
-# BLOCKED (moteur hors réseau, silencieusement) car gluetun gère déjà la
-# protection via son propre firewall de netns. Bug vécu le 2026-10-26.
 bind_interface = ""
 listen_interfaces = ""
 max_connections = 2000
@@ -100,10 +87,6 @@ min_age_minutes = 10
 username = "lego"
 password_hash = "REPLACE_ME_PASSWORD_HASH"
 
-# [hoard.disk_slots] (mode "HDD quiet" par disque) retiré : code mort en
-# Hydranos 4.4, jamais lu par le moteur. La protection du disque passe
-# par [hoard] queueing/active_seeds ci-dessus (plafonne les seeds actifs
-# en simultané).
 
 [announce_muted]
 "gemini-tracker.org" = "1"

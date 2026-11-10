@@ -13,18 +13,12 @@
 
   environment.etc."fastfetch/config.jsonc".source = ./etc/fastfetch.jsonc;
 
-  # Force IPv4 preference for outbound connections (fixes certbot → Cloudflare API
-  # with rotating IPv6 privacy extensions causing token rejection)
   environment.etc."gai.conf".text = ''
     precedence ::ffff:0:0/96 100
   '';
 
-  # Reverse Path Filtering — safe on nginx (no complex Podman container routing)
   boot.kernel.sysctl."net.ipv4.conf.all.rp_filter" = 1;
 
-  # Specific firewall rules for Proxy host (WAN/LAN HTTP/HTTPS ports)
-  # Port 81 (NPMplus admin UI) is only reachable over Tailscale. npmplus runs with --network=host,
-  # so these rules do apply to it (unlike ports published by Podman).
   networking.firewall.interfaces = {
     ens18 = {
       allowedTCPPorts = [ 22 80 443 ];
@@ -46,32 +40,24 @@
   '';
 
   # ── NPMPlus Log Viewer — Colored aliases for nginx access logs & CrowdSec bans ──
-  # Format: [$time] [Client $ip] [$country] [$host] "$request" $status $req_time $upstream_time "$referer" $bytes "$ua"
-  # Colors: 🔵 Cyan=IP  🟡 Yellow=Host  🟣 Magenta=2xx/3xx  🟠 Orange=timing  🔴 Red=4xx/5xx/ban
 
   programs.zsh.interactiveShellInit = lib.mkAfter ''
-    # NPMPlus access log path (volume: /config/npmplus:/data)
     NPM_LOG="/config/npmplus/nginx/logs/access.log"
 
-    # Detect dark vs light terminal background.
-    # Override: export LIVE_THEME=dark  or  export LIVE_THEME=light
     _live_is_dark() {
       local t=''${LIVE_THEME:-auto}
       [[ $t == dark ]]  && return 0
       [[ $t == light ]] && return 1
-      # Auto-detect via COLORFGBG ("fg;bg"): bg <= 8 = dark, > 8 = light
       if [[ -n ''${COLORFGBG:-} ]]; then
         local _bg=''${COLORFGBG##*;}
         (( _bg <= 8 )) && return 0
         return 1
       fi
-      return 1  # default: assume light terminal
+      return 1
     }
 
-    # Coloring + redaction function for npmplus_geo log format
     color_live() {
       if _live_is_dark; then
-        # ── Dark terminal palette ──────────────────────────────
         sed -u \
           -e 's/api_key=[^&" ]*/api_key=[REDACTED]/g' \
           -e 's/access_token=[^&" ]*/access_token=[REDACTED]/g' \
@@ -94,7 +80,6 @@
           -e 's/"DELETE /\x1b[1;38;5;196m"DELETE \x1b[0m/g' \
           -e 's/"https\?:\/\/[^"]*/\x1b[38;5;226m&\x1b[0m/g'
       else
-        # ── Light terminal palette ─────────────────────────────
         sed -u \
           -e 's/api_key=[^&" ]*/api_key=[REDACTED]/g' \
           -e 's/access_token=[^&" ]*/access_token=[REDACTED]/g' \
@@ -119,10 +104,6 @@
       fi
     }
 
-    # Convert [XX] country code to 🇽🇽 [XX] flag emoji using Unicode Regional Indicators
-    # Regional Indicator 'A' = U+1F1E6 = 127462 = 127461 + index(1-based)
-    # NOTE: use result+rest pattern — modifying $0 in-place would cause infinite loop
-    #       because the replacement keeps [XX] in the output which re-matches.
     add_flags() {
       LC_ALL=en_US.UTF-8 gawk '
         function flag(cc,   c1, c2) {
@@ -145,13 +126,10 @@
       '
     }
 
-    # All access logs in color with flag emojis
     alias live='sudo tail -f "$NPM_LOG" | add_flags | color_live'
 
-    # Access logs excluding Tailscale (100.x) and internal IPs
     alias live-ext='sudo tail -f "$NPM_LOG" | grep --line-buffered -v -E "(100\.[0-9]+\.[0-9]+\.[0-9]+|127\.0\.0\.1|::1)" | add_flags | color_live'
 
-    # CrowdSec bans only — filters out AppSec reload noise from podman logs
     alias bans='sudo podman logs npmplus -f 2>&1 | grep --line-buffered -v -E "(APPSEC is enabled|Initialisation done|crowdsec\.lua:243|crowdsec\.conf.*init|Failed to create the timer|nginx -tq|nginx -s reload|certbot|Renew|logrotate|acquired lock|Reading state|Allocating hash|Creating new state|rotating pattern|log needs|log does not)"'
   '';
 }

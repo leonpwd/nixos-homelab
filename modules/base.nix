@@ -46,36 +46,30 @@
 
   users.mutableUsers = false;
 
-  # leon and hugo share one $HOME (/home/lego — kept as-is, not moved, to
-  # avoid relocating existing data) and one login config. uid pinned to 1000
-  # to match existing file ownership (tmpfiles rules, container volumes
-  # already chowned 1000:1000) that predates this rename from "lego".
+  users.groups.lego = {};
+
   users.users.leon = {
     isNormalUser = true;
     uid          = 1000;
     home         = "/home/lego";
-    extraGroups  = [ "wheel" "podman" ];
+    extraGroups  = [ "lego" "wheel" "podman" ];
     shell        = pkgs.zsh;
     hashedPassword = "!";
-    homeMode     = "770"; # group "users" (both leon and hugo) gets access
+    homeMode     = "2770";
     openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKTaIJwfMzeyqnMvwonVwqX77OXzqUrlumj8Fl0AOfCX git.staleness589@passmail.com" # Léon
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKTaIJwfMzeyqnMvwonVwqX77OXzqUrlumj8Fl0AOfCX git.staleness589@passmail.com"
     ];
   };
 
-  # Separate login so sudo/auth logs attribute to the right person, not just
-  # the SSH key used to connect. Shares leon's $HOME and shell config on
-  # purpose — same rights too: Hugo already has unrestricted sudo either
-  # way, this is for accountability, not an access boundary.
   users.users.hugo = {
     isNormalUser = true;
     home         = "/home/lego";
     createHome   = false;
-    extraGroups  = [ "wheel" "podman" ];
+    extraGroups  = [ "lego" "wheel" "podman" ];
     shell        = pkgs.zsh;
     hashedPassword = "!";
     openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEsR+Vr5t1fxFlTBNi9eoGIYBkG7uhP/Kg63Z901eKat nathaniel@XPS" # Hugo
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEsR+Vr5t1fxFlTBNi9eoGIYBkG7uhP/Kg63Z901eKat nathaniel@XPS"
     ];
   };
 
@@ -85,14 +79,19 @@
 
   environment.shells = [ pkgs.zsh ];
 
-  # Shared $HOME needs exactly one .zshrc stub (skips zsh's first-run
-  # wizard); the rest of the shell experience (completion, p10k, fastfetch)
-  # is system-wide below, so leon and hugo get it identically for free.
   system.activationScripts.sharedZshrc = lib.stringAfter [ "users" ] ''
     if [ ! -f /home/lego/.zshrc ]; then
-      install -o leon -g users -m 644 /dev/null /home/lego/.zshrc
+      install -o leon -g lego -m 644 /dev/null /home/lego/.zshrc
     fi
+    if [ -f /home/lego/.zsh_history ] && [ ! -f /home/lego/.zsh_history_leon ]; then
+      mv /home/lego/.zsh_history /home/lego/.zsh_history_leon
+    fi
+    chgrp -R lego /home/lego
+    chmod -R g+rwX /home/lego
+    find /home/lego -type d -exec chmod g+s {} +
   '';
+
+  programs.zsh.shellInit = "umask 002";
 
   programs.zsh = {
     enable = true;
@@ -101,7 +100,7 @@
     syntaxHighlighting.enable = true;
 
     histSize = 50000;
-    histFile = "$HOME/.zsh_history";
+    histFile = "$HOME/.zsh_history_$USER";
     setOptions = [
       "EXTENDED_HISTORY"
       "HIST_EXPIRE_DUPS_FIRST"
@@ -200,20 +199,19 @@
   # ── Network & Firewall Base ────────────────────────────────────────────────────
   
   networking.nameservers = [
-    "1.1.1.1"              # Cloudflare Primary
-    "1.0.0.1"              # Cloudflare Backup
-    "2606:4700:4700::1111"  # Cloudflare IPv6 Primary
+    "1.1.1.1"
+    "1.0.0.1"
+    "2606:4700:4700::1111"
   ];   
   
   networking.firewall = {
     enable = true;
     allowedUDPPorts = [ 
-      41641 # Tailscale
+      41641
     ];
     checkReversePath = "loose";
   };
 
-  # Enable container name DNS for all Podman networks
   networking.firewall.interfaces = let
     matchAll = if !config.networking.nftables.enable then "podman+" else "podman*";
   in {
@@ -223,40 +221,33 @@
   # ── Kernel Hardening (sysctl) ──────────────────────────────────────────────────
 
   boot.kernel.sysctl = {
-    # Memory & Swap optimization for zram
-    "vm.swappiness"                               = 180;  # Aggressive zram swapping (official kernel recommendation)
+    "vm.swappiness"                               = 180;
 
-    # Kernel panic auto-reboot (headless VM resilience)
-    "kernel.panic"                                = 10;   # Auto-reboot after 10s on kernel panic
+    "kernel.panic"                                = 10;
     "kernel.panic_on_oops"                        = 1;
 
-    # TCP BBR congestion control & Fair Queueing
     "net.core.default_qdisc"                      = "fq";
     "net.ipv4.tcp_congestion_control"             = "bbr";
-    "net.core.rmem_max"                           = 4194304; # 4 MB max receive buffer for high-throughput
-    "net.core.wmem_max"                           = 4194304; # 4 MB max send buffer for high-throughput
+    "net.core.rmem_max"                           = 4194304;
+    "net.core.wmem_max"                           = 4194304;
 
-    # Filesystem protections
-    "fs.protected_fifos"                          = 2;    # Prevent FIFO race conditions in world-writable dirs
-    "fs.protected_regular"                        = 2;    # Prevent writes to files owned by others in shared dirs
-    "fs.suid_dumpable"                            = 0;    # Disable core dumps for SUID processes (no memory leak)
+    "fs.protected_fifos"                          = 2;
+    "fs.protected_regular"                        = 2;
+    "fs.suid_dumpable"                            = 0;
 
-    # Kernel hardening
-    "dev.tty.ldisc_autoload"                      = 0;    # Prevent auto-loading of unused TTY line disciplines
-    "kernel.kptr_restrict"                        = 2;    # Hide kernel pointers even from root (defeats ASLR bypass)
-    "kernel.sysrq"                                = 0;    # Disable Magic SysRq key (useless on headless servers)
-    "kernel.unprivileged_bpf_disabled"            = 1;    # Prevent unprivileged BPF (many CVEs) — root Podman unaffected
+    "dev.tty.ldisc_autoload"                      = 0;
+    "kernel.kptr_restrict"                        = 2;
+    "kernel.sysrq"                                = 0;
+    "kernel.unprivileged_bpf_disabled"            = 1;
 
-    # BPF JIT hardening
-    "net.core.bpf_jit_harden"                     = 2;    # Harden BPF JIT against constant-blinding attacks
+    "net.core.bpf_jit_harden"                     = 2;
 
-    # Network: anti-spoofing & logging
-    "net.ipv4.conf.all.log_martians"              = 1;    # Log packets with impossible source IPs (detect spoofing)
-    "net.ipv4.conf.all.send_redirects"            = 0;    # Don't send ICMP redirects (we're not a router)
-    "net.ipv4.conf.default.accept_redirects"      = 0;    # Reject incoming ICMP redirects (MITM prevention)
-    "net.ipv4.conf.default.log_martians"          = 1;    # Same as above for new interfaces (Podman veth)
-    "net.ipv6.conf.all.accept_redirects"          = 0;    # Reject ICMPv6 redirects
-    "net.ipv6.conf.default.accept_redirects"      = 0;    # Same for new IPv6 interfaces
+    "net.ipv4.conf.all.log_martians"              = 1;
+    "net.ipv4.conf.all.send_redirects"            = 0;
+    "net.ipv4.conf.default.accept_redirects"      = 0;
+    "net.ipv4.conf.default.log_martians"          = 1;
+    "net.ipv6.conf.all.accept_redirects"          = 0;
+    "net.ipv6.conf.default.accept_redirects"      = 0;
   };
 
   # ── Shared Services (Tailscale, QEMU Guest, EarlyOOM & Podman) ─────────────

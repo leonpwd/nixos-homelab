@@ -26,7 +26,6 @@
 
     # ── Secret Files Templates ────────────────────────────────────────────────
 
-    # Arcane Agent Environment File
     templates."arcane.env".content = ''
       AGENT_MODE=true
       EDGE_TRANSPORT=poll
@@ -36,19 +35,16 @@
       JWT_SECRET=${config.sops.placeholder."arcane/jwt_secret"}
     '';
 
-    # WireGuard Private Key Secret File
     templates."wireguard_private_key" = {
       content = config.sops.placeholder."media/wireguard_private_key";
       mode    = "0400";
     };
 
-    # GSP API Key Secret File
     templates."gsp_api_key" = {
       content = config.sops.placeholder."media/gsp_api_key";
       mode    = "0400";
     };
 
-    # Gluetun config.toml template dynamically embedding GSP_API_KEY
     templates."gluetun_config.toml" = {
       content = ''
         [[roles]]
@@ -79,7 +75,6 @@
         SLSKD_OVERWRITE_METADATA=false
         USE_SUBDIRECTORY=false
         SLSKD_KEEP_PERMISSIONS=false
-        # Lossless-only automatic downloads; Explo has no sample-rate filter.
         EXTENSIONS=flac
         MIN_BIT_DEPTH=16
         LOG_LEVEL=INFO

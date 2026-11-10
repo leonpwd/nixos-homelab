@@ -7,9 +7,7 @@ import:
   write: true
   autotag: true
   quiet: true
-  # Keep tagged files when MusicBrainz has no confident match.
   quiet_fallback: asis
-  # Download folders can receive more songs later: never skip a whole directory.
   incremental: false
   resume: false
   duplicate_action: skip
@@ -20,8 +18,6 @@ paths:
   singleton: Singles/$artist/$title
   comp: Compilations/$album%aunique{}/$track $title
 
-# MusicBrainz is built into Beets, not a plugin. Avoid scrub: preserve tags
-# that are not replaced by the selected metadata match.
 plugins: fetchart embedart lastgenre web
 
 fetchart:
@@ -39,5 +35,4 @@ lastgenre:
 web:
   host: 0.0.0.0
   port: 8337
-  # No authentication on this API: keep it read-only (already beets' default, stated explicitly).
   readonly: yes
