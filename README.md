@@ -11,7 +11,7 @@ This is my own setup, not a ready-to-use template: hostnames, domains and addres
 | `nginx` | Reverse proxy and WAF | NPMplus, CrowdSec, Arcane                                                            |
 | `media` | Media and automation  | Sonarr, Radarr, Prowlarr, qBittorrent behind Gluetun, Navidrome, slskd, Beets, Seerr |
 
-Both hosts are reachable over Tailscale. A separate Raspberry Pi lives in its own repository.
+Both hosts are reachable over Tailscale.
 
 ## Layout
 
