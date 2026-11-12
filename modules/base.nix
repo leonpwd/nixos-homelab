@@ -124,14 +124,16 @@
       alias la='eza -a --icons=auto --group-directories-first'
       alias lt='eza --tree --level=2 --icons=auto'
       alias docker='podman'
+      _fastfetch_config=/etc/fastfetch/config.jsonc
       if [[ $TERM == linux ]]; then
         export STARSHIP_CONFIG=/etc/starship-console.toml
+        _fastfetch_config=/etc/fastfetch/config-plain.jsonc
         alias ls='eza --group-directories-first'
         alias ll='eza -alF --git --group-directories-first'
         alias la='eza -a --group-directories-first'
         alias lt='eza --tree --level=2'
       fi
-      fastfetch --config /etc/fastfetch/config.jsonc
+      fastfetch --config $_fastfetch_config
     '';
   };
 
@@ -143,6 +145,10 @@
   programs.starship.enable = true;
   environment.etc."starship.toml".source = ./etc/starship.toml;
   environment.etc."starship-console.toml".source = ./etc/starship-console.toml;
+  environment.etc."fastfetch/config-plain.jsonc".source =
+    pkgs.runCommand "fastfetch-plain.jsonc" { nativeBuildInputs = [ pkgs.perl ]; } ''
+      perl -CSD -pe 's/[\x{E000}-\x{F8FF}\x{F0000}-\x{10FFFD}]//g' ${config.environment.etc."fastfetch/config.jsonc".source} > $out
+    '';
   environment.variables.STARSHIP_CONFIG  = "/etc/starship.toml";
 
   programs.zoxide.enable = true;
