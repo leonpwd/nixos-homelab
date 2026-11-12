@@ -124,12 +124,25 @@
       alias la='eza -a --icons=auto --group-directories-first'
       alias lt='eza --tree --level=2 --icons=auto'
       alias docker='podman'
+      if [[ $TERM == linux || $(tty) == /dev/ttyS* ]]; then
+        export STARSHIP_CONFIG=/etc/starship-console.toml
+        alias ls='eza --group-directories-first'
+        alias ll='eza -alF --git --group-directories-first'
+        alias la='eza -a --group-directories-first'
+        alias lt='eza --tree --level=2'
+      fi
       fastfetch --config /etc/fastfetch/config.jsonc
     '';
   };
 
+  environment.shellAliases = {
+    ls = null;
+    ll = null;
+  };
+
   programs.starship.enable = true;
   environment.etc."starship.toml".source = ./etc/starship.toml;
+  environment.etc."starship-console.toml".source = ./etc/starship-console.toml;
   environment.variables.STARSHIP_CONFIG  = "/etc/starship.toml";
 
   programs.zoxide.enable = true;
@@ -194,6 +207,13 @@
     autologinUser = "leon";
     helpLine = lib.mkForce "";
     greetingLine = lib.mkForce "";
+  };
+
+  boot.kernelParams = [ "console=tty0" "console=ttyS0,115200n8" ];
+
+  systemd.services."serial-getty@ttyS0" = {
+    wantedBy = [ "getty.target" ];
+    environment.TERM = "xterm-256color";
   };
 
   # ── Network & Firewall Base ────────────────────────────────────────────────────
