@@ -124,7 +124,7 @@
       alias la='eza -a --icons=auto --group-directories-first'
       alias lt='eza --tree --level=2 --icons=auto'
       alias docker='podman'
-      if [[ $TERM == linux || $(tty) == /dev/ttyS* ]]; then
+      if [[ $TERM == linux ]]; then
         export STARSHIP_CONFIG=/etc/starship-console.toml
         alias ls='eza --group-directories-first'
         alias ll='eza -alF --git --group-directories-first'
@@ -214,6 +214,9 @@
   systemd.services."serial-getty@ttyS0" = {
     wantedBy = [ "getty.target" ];
     environment.TERM = "xterm-256color";
+    serviceConfig.Restart = "always";
+    serviceConfig.RestartSec = 1;
+    unitConfig.StartLimitIntervalSec = 0;
   };
 
   # ── Network & Firewall Base ────────────────────────────────────────────────────
