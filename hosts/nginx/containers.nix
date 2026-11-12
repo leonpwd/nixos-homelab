@@ -100,7 +100,7 @@
   virtualisation.oci-containers.containers."crowdsec" = {
     image = "docker.io/crowdsecurity/crowdsec:latest";
     environment = {
-      "COLLECTIONS" = "ZoeyVid/npmplus";
+      "COLLECTIONS" = "ZoeyVid/npmplus crowdsecurity/http-cve";
       "TZ" = "Europe/Paris";
       "USE_WAL" = "true";
     };

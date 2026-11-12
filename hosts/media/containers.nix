@@ -23,6 +23,7 @@
     "d /media/HDD1                       0775 1000 1000 -"
     "d /media/HDD1/downloads             0775 1000 1000 -"
     "d /media/HDD1/downloads/cross-seed  0775 1000 1000 -"
+    "d /media/HDD1/media                 2775 1000 1000 -"
     "d /media/HDD1/media/Music           0775 1000 1000 -"
     "d /media/HDD1/media/Music/Inbox     0775 1000 1000 -"
     "d /media/HDD1/media/Music/Inbox/complete   0775 1000 1000 -"
