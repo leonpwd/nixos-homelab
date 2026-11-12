@@ -188,6 +188,7 @@
       "VPN_PORT_FORWARDING_UP_COMMAND" = "/bin/sh -c 'wget -qO- --header=\"Content-Type: application/json\" --post-data=\"{\\\"port\\\":{{PORT}}}\" http://127.0.0.1:8199/api/hoard/listen-port || true'";
       "VPN_SERVICE_PROVIDER" = "protonvpn";
       "VPN_TYPE" = "wireguard";
+      "WIREGUARD_MTU" = "1320";
       "WIREGUARD_IMPLEMENTATION" = "kernelspace";
       "WIREGUARD_PRIVATE_KEY_SECRETFILE" = "/run/secrets/wireguard_private_key";
     };

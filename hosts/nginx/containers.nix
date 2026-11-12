@@ -129,6 +129,12 @@
       install -D -m 0644 ${../../crowdsec/npmplus.yaml} /config/crowdsec/conf/acquis.d/npmplus.yaml
       install -D -m 0644 ${../../crowdsec/tailscale-whitelist.yaml} /config/crowdsec/conf/parsers/s02-enrich/tailscale-whitelist.yaml
       install -D -m 0644 ${../../crowdsec/tailscale-postoverflow-whitelist.yaml} /config/crowdsec/conf/postoverflows/s01-whitelist/tailscale-whitelist.yaml
+      : > /config/crowdsec/conf/acquis.yaml
+      for db in GeoLite2-City GeoLite2-ASN; do
+        if [ -f /config/npmplus/goaccess/geoip/$db.mmdb ]; then
+          install -m 0644 /config/npmplus/goaccess/geoip/$db.mmdb /config/crowdsec/data/$db.mmdb
+        fi
+      done
     '';
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
