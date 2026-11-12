@@ -11,6 +11,9 @@
 
   networking.hostName = "media";
 
+  system.autoUpgrade.dates = lib.mkForce "Mon 04:30";
+  systemd.timers.podman-auto-update.timerConfig.OnCalendar = lib.mkForce [ "" "*-*-* 04:30:00" ];
+
   environment.etc."fastfetch/config.jsonc".source = ./etc/fastfetch.jsonc;
 
   # ── Proxmox VirtioFS Shared Storage ──────────────────────────────────────────
