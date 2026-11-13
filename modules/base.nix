@@ -124,6 +124,7 @@
       alias la='eza -a --icons=auto --group-directories-first'
       alias lt='eza --tree --level=2 --icons=auto'
       alias docker='podman'
+      alias ox='sudo DOCKER_HOST=unix:///run/podman/podman.sock oxker'
       _fastfetch_config=/etc/fastfetch/config.jsonc
       if [[ $TERM == linux ]]; then
         export STARSHIP_CONFIG=/etc/starship-console.toml
@@ -313,7 +314,7 @@
 
   # ── Base System Packages & Scripts ─────────────────────────────────────────────
 
-  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just tree btop ncdu jq bind.dnsutils lsof eza bat ];
+  environment.systemPackages = with pkgs; [ git vim tailscale fastfetch just tree btop ncdu jq bind.dnsutils lsof eza bat oxker ];
 
   system.activationScripts.serverJustfile = lib.stringAfter [ "users" ] ''
     install -m 644 ${./etc/server.just} /Justfile
