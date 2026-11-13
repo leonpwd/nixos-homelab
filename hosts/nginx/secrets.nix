@@ -8,8 +8,6 @@
 
     # ── Secrets Declarations (Nginx Proxy Host) ───────────────────────────────
 
-    secrets."arcane/encryption_key" = {};
-    secrets."arcane/jwt_secret"     = {};
     secrets."npmplus/acme_email"    = {};
     secrets."geoip/account_id"      = {};
     secrets."geoip/license_key"     = {};
@@ -20,11 +18,6 @@
     secrets."crowdsec/turnstile_site_key" = {};
 
     # ── Container .env Templates ───────────────────────────────────────────────
-
-    templates."arcane.env".content = ''
-      ENCRYPTION_KEY=${config.sops.placeholder."arcane/encryption_key"}
-      JWT_SECRET=${config.sops.placeholder."arcane/jwt_secret"}
-    '';
 
     templates."npmplus.env".content = ''
       ACME_EMAIL=${config.sops.placeholder."npmplus/acme_email"}

@@ -48,7 +48,7 @@ logs-full container:
 logs-all:
     journalctl -u 'podman*' -n 500 -f --no-pager
 
-# Redémarre un container (usage : just restart arcane)
+# Redémarre un container (usage : just restart sonarr)
 restart container:
     sudo systemctl restart podman-{{ container }}.service
 

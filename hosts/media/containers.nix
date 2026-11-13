@@ -5,7 +5,6 @@
   # ── Deterministic Host Directory Creation ─────────────────────────────────────
 
   systemd.tmpfiles.rules = [
-    "d /config/arcane-agent-data         0775 1000 1000 -"
     "d /config/cross-seed                0750 1000 1000 -"
     "d /config/gluetun                   0750 1000 1000 -"
     "d /config/hydra-qbit                0750 1000 1000 -"
@@ -34,42 +33,6 @@
   virtualisation.oci-containers.backend = "podman";
 
   # ── Containers Definitions ───────────────────────────────────────────────────
-
-  virtualisation.oci-containers.containers."arcane-agent" = {
-    image = "ghcr.io/getarcaneapp/agent:latest";
-    environment = {
-      "AGENT_MODE" = "true";
-      "EDGE_TRANSPORT" = "poll";
-      "DOCKER_HOST" = "tcp://docker-proxy:2375";
-      "TZ" = "Europe/Paris";
-    };
-    environmentFiles = [ config.sops.templates."arcane.env".path ];
-    volumes = [
-      "/config/arcane-agent-data:/app/data:rw"
-    ];
-    ports = [
-      "3553:3553/tcp"
-    ];
-    dependsOn = [
-      "docker-proxy"
-    ];
-    log-driver = "journald";
-    extraOptions = [
-      "--label=io.containers.autoupdate=registry"
-      "--network-alias=arcane-agent"
-      "--network=netMGMT"
-      "--security-opt=no-new-privileges:true"
-    ];
-  };
-  systemd.services."podman-arcane-agent" = {
-    serviceConfig = {
-      Restart = lib.mkOverride 90 "always";
-    };
-    after = [ "podman-network-netMGMT.service" ];
-    requires = [ "podman-network-netMGMT.service" ];
-    partOf = [ "podman-compose-media-root.target" ];
-    wantedBy = [ "podman-compose-media-root.target" ];
-  };
 
   virtualisation.oci-containers.containers."cross-seed" = {
     image = "ghcr.io/cross-seed/cross-seed:latest";
@@ -106,66 +69,6 @@
     serviceConfig = {
       Restart = lib.mkOverride 90 "always";
     };
-    partOf = [ "podman-compose-media-root.target" ];
-    wantedBy = [ "podman-compose-media-root.target" ];
-  };
-
-  virtualisation.oci-containers.containers."docker-proxy" = {
-    image = "docker.io/tecnativa/docker-socket-proxy:latest";
-    environment = {
-      "AUTH" = "0";
-      "BUILD" = "0";
-      "COMMIT" = "0";
-      "CONFIGS" = "0";
-      "CONTAINERS" = "1";
-      "DISTRIBUTION" = "0";
-      "EVENTS" = "1";
-      "EXEC" = "1";
-      "IMAGES" = "1";
-      "INFO" = "1";
-      "NETWORKS" = "1";
-      "NODES" = "0";
-      "PING" = "1";
-      "PLUGINS" = "0";
-      "POST" = "1";
-      "SECRETS" = "0";
-      "SERVICES" = "0";
-      "SESSION" = "0";
-      "SWARM" = "0";
-      "SYSTEM" = "0";
-      "TASKS" = "0";
-      "TZ" = "Europe/Paris";
-      "VERSION" = "1";
-      "VOLUMES" = "1";
-    };
-    volumes = [
-      "/run/podman/podman.sock:/var/run/docker.sock:ro"
-    ];
-    log-driver = "journald";
-    extraOptions = [
-      "--label=io.containers.autoupdate=registry"
-      "--network-alias=docker-proxy"
-      "--network=netMGMT"
-      "--security-opt=no-new-privileges:true"
-    ];
-  };
-  systemd.services."podman-docker-proxy" = {
-    unitConfig = {
-      StartLimitIntervalSec = 0;
-    };
-    preStart = ''
-      if [ -d /run/podman/podman.sock ]; then
-        rm -rf /run/podman/podman.sock
-      fi
-      if [ -d /var/run/docker.sock ]; then
-        rm -rf /var/run/docker.sock
-      fi
-    '';
-    serviceConfig = {
-      Restart = lib.mkOverride 90 "always";
-    };
-    after = [ "podman-network-netMGMT.service" "podman.service" ];
-    requires = [ "podman-network-netMGMT.service" "podman.service" ];
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];
   };
@@ -616,20 +519,6 @@
     };
     script = ''
       podman network inspect netARR || podman network create netARR --driver=bridge
-    '';
-    partOf = [ "podman-compose-media-root.target" ];
-    wantedBy = [ "podman-compose-media-root.target" ];
-  };
-
-  systemd.services."podman-network-netMGMT" = {
-    path = [ pkgs.podman ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStop = "podman network rm -f netMGMT";
-    };
-    script = ''
-      podman network inspect netMGMT || podman network create netMGMT --driver=bridge
     '';
     partOf = [ "podman-compose-media-root.target" ];
     wantedBy = [ "podman-compose-media-root.target" ];

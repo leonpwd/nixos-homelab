@@ -6,7 +6,6 @@
     "d /config/npmplus/nginx             0750 root root -"
     "d /config/npmplus/goaccess/geoip   0750 root root -"
     "d /config/npmplus/crowdsec          0750 root root -"
-    "d /config/arcane-data               0750 1000 1000 -"
     "d /config/crowdsec/conf             0750 root root -"
     "d /config/crowdsec/conf/acquis.d    0750 root root -"
     "d /config/crowdsec/data             0750 root root -"
@@ -44,58 +43,6 @@
   virtualisation.oci-containers.backend = "podman";
 
   # ── Containers ─────────────────────────────────────────────────────────────
-
-  virtualisation.oci-containers.containers."arcane" = {
-    image = "ghcr.io/getarcaneapp/arcane:latest";
-    environment = {
-      "DOCKER_HOST" = "tcp://docker-proxy:2375";
-      "PGID" = "1000";
-      "PUID" = "1000";
-      "TZ"   = "Europe/Paris";
-    };
-    environmentFiles = [ config.sops.templates."arcane.env".path ];
-    volumes = [
-      "/config/arcane-data:/app/data:rw"
-    ];
-    ports = [
-      "100.107.36.94:3552:3552/tcp"
-    ];
-    dependsOn = [
-      "docker-proxy"
-    ];
-    log-driver = "journald";
-    extraOptions = [
-      "--label=io.containers.autoupdate=registry"
-      "--network-alias=arcane"
-      "--network=netMGMT"
-      "--security-opt=no-new-privileges:true"
-    ];
-  };
-  systemd.services."podman-arcane" = {
-    serviceConfig = {
-      Restart = lib.mkOverride 90 "always";
-    };
-    after = [
-      "podman-network-netMGMT.service"
-      "tailscaled.service"
-    ];
-    requires = [
-      "podman-network-netMGMT.service"
-    ];
-    wants = [
-      "tailscaled.service"
-    ];
-    partOf = [
-      "podman-compose-nginx-root.target"
-    ];
-    upheldBy = [
-      "podman-docker-proxy.service"
-      "podman-network-netMGMT.service"
-    ];
-    wantedBy = [
-      "podman-compose-nginx-root.target"
-    ];
-  };
 
   virtualisation.oci-containers.containers."crowdsec" = {
     image = "docker.io/crowdsecurity/crowdsec:latest";
@@ -151,79 +98,6 @@
     upheldBy = [
       "podman-network-netPROXY.service"
       "podman-npmplus.service"
-    ];
-    wantedBy = [
-      "podman-compose-nginx-root.target"
-    ];
-  };
-
-  virtualisation.oci-containers.containers."docker-proxy" = {
-    image = "docker.io/tecnativa/docker-socket-proxy:latest";
-    environment = {
-      "AUTH" = "0";
-      "BUILD" = "0";
-      "COMMIT" = "0";
-      "CONFIGS" = "0";
-      "CONTAINERS" = "1";
-      "DISTRIBUTION" = "0";
-      "EVENTS" = "1";
-      "EXEC" = "1";
-      "IMAGES" = "1";
-      "INFO" = "1";
-      "NETWORKS" = "1";
-      "NODES" = "0";
-      "PING" = "1";
-      "PLUGINS" = "0";
-      "POST" = "1";
-      "SECRETS" = "0";
-      "SERVICES" = "0";
-      "SESSION" = "0";
-      "SWARM" = "0";
-      "SYSTEM" = "0";
-      "TASKS" = "0";
-      "TZ" = "Europe/Paris";
-      "VERSION" = "1";
-      "VOLUMES" = "1";
-    };
-    volumes = [
-      "/run/podman/podman.sock:/var/run/docker.sock:ro"
-    ];
-    log-driver = "journald";
-    extraOptions = [
-      "--label=io.containers.autoupdate=registry"
-      "--network-alias=docker-proxy"
-      "--network=netMGMT"
-      "--security-opt=no-new-privileges:true"
-    ];
-  };
-  systemd.services."podman-docker-proxy" = {
-    unitConfig = {
-      StartLimitIntervalSec = 0;
-    };
-    preStart = ''
-      if [ -d /run/podman/podman.sock ]; then
-        rm -rf /run/podman/podman.sock
-      fi
-      if [ -d /var/run/docker.sock ]; then
-        rm -rf /var/run/docker.sock
-      fi
-    '';
-    serviceConfig = {
-      Restart = lib.mkOverride 90 "always";
-    };
-    after = [
-      "podman-network-netMGMT.service"
-      "podman.service"
-    ];
-    requires = [
-      "podman-network-netMGMT.service"
-      "podman.service"
-    ];
-    partOf = [
-      "podman-compose-nginx-root.target"
-    ];
-    upheldBy = [
-      "podman-network-netMGMT.service"
     ];
     wantedBy = [
       "podman-compose-nginx-root.target"
@@ -323,20 +197,6 @@
     };
     script = ''
       podman network inspect netPROXY || podman network create netPROXY --driver=bridge
-    '';
-    partOf = [ "podman-compose-nginx-root.target" ];
-    wantedBy = [ "podman-compose-nginx-root.target" ];
-  };
-
-  systemd.services."podman-network-netMGMT" = {
-    path = [ pkgs.podman ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStop = "podman network rm -f netMGMT";
-    };
-    script = ''
-      podman network inspect netMGMT || podman network create netMGMT --driver=bridge
     '';
     partOf = [ "podman-compose-nginx-root.target" ];
     wantedBy = [ "podman-compose-nginx-root.target" ];

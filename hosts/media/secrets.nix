@@ -8,10 +8,6 @@
 
     # ── Secrets Declarations (Media Host) ──────────────────────────────────────
 
-    secrets."arcane/encryption_key"       = {};
-    secrets."arcane/jwt_secret"           = {};
-    secrets."arcane/agent_token"          = {};
-    secrets."arcane/manager_api_url"      = {};
     secrets."media/wireguard_private_key" = {};
     secrets."media/gsp_api_key"          = {};
     secrets."music/listenbrainz_user"    = {};
@@ -25,15 +21,6 @@
     secrets."music/soulseek_password"    = {};
 
     # ── Secret Files Templates ────────────────────────────────────────────────
-
-    templates."arcane.env".content = ''
-      AGENT_MODE=true
-      EDGE_TRANSPORT=poll
-      AGENT_TOKEN=${config.sops.placeholder."arcane/agent_token"}
-      MANAGER_API_URL=${config.sops.placeholder."arcane/manager_api_url"}
-      ENCRYPTION_KEY=${config.sops.placeholder."arcane/encryption_key"}
-      JWT_SECRET=${config.sops.placeholder."arcane/jwt_secret"}
-    '';
 
     templates."wireguard_private_key" = {
       content = config.sops.placeholder."media/wireguard_private_key";
